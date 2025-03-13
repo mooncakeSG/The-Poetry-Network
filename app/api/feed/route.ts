@@ -1,38 +1,43 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    const { searchParams } = new URL(req.url)
-    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
-    const sort = searchParams.get("sort") || "latest"
-    
     const skip = (page - 1) * limit
 
-    // Build the where clause
-    const where = {
-      published: true,
-    }
+    // Get users that the current user follows
+    const following = await prisma.follows.findMany({
+      where: { followerId: session.user.id },
+      select: { followingId: true },
+    })
 
-    // Build the orderBy clause based on sort parameter
-    let orderBy: any = { createdAt: "desc" }
-    if (sort === "trending") {
-      orderBy = [
-        { likes: { _count: "desc" } },
-        { comments: { _count: "desc" } },
-        { createdAt: "desc" },
-      ]
-    }
+    const followingIds = following.map((f) => f.followingId)
 
+    // Get poems from followed users and the current user
     const [poems, total] = await Promise.all([
       prisma.poem.findMany({
-        where,
+        where: {
+          authorId: {
+            in: [...followingIds, session.user.id],
+          },
+          published: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
         include: {
           author: {
             select: {
@@ -41,45 +46,39 @@ export async function GET(req: Request) {
               image: true,
             },
           },
+          tags: true,
           _count: {
             select: {
               likes: true,
               comments: true,
             },
           },
-          // If user is logged in, check if they liked each poem
-          likes: session?.user?.id ? {
-            where: {
-              userId: session.user.id,
-            },
-            select: {
-              userId: true,
-            },
-          } : false,
+          likes: {
+            where: { userId: session.user.id },
+            select: { userId: true },
+          },
         },
-        orderBy,
-        skip,
-        take: limit,
       }),
-      prisma.poem.count({ where }),
+      prisma.poem.count({
+        where: {
+          authorId: {
+            in: [...followingIds, session.user.id],
+          },
+          published: true,
+        },
+      }),
     ])
 
-    // Transform the poems to include userLiked
-    const transformedPoems = poems.map((poem) => ({
-      ...poem,
-      userLiked: session?.user?.id ? poem.likes.length > 0 : false,
-      likes: undefined, // Remove the likes array from the response
-    }))
-
     return NextResponse.json({
-      poems: transformedPoems,
+      poems,
       total,
-      hasMore: skip + poems.length < total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
     })
   } catch (error) {
-    console.error("Error fetching feed:", error)
+    console.error("Get Feed API Error:", error)
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }

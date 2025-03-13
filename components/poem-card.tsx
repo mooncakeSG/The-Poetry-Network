@@ -12,24 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import { ShareButton } from "@/components/share-button"
+import { type PoemCardData } from "@/types"
 
 interface PoemCardProps {
-  poem: {
-    id: string
-    title: string
-    content: string
-    createdAt: string
-    userLiked: boolean
-    author: {
-      id: string
-      name: string
-      image: string | null
-    }
-    _count: {
-      likes: number
-      comments: number
-    }
-  }
+  poem: PoemCardData
 }
 
 export function PoemCard({ poem }: PoemCardProps) {

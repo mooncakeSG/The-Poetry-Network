@@ -1,9 +1,62 @@
 import Link from "next/link"
 import { Heart, MessageSquare, Search } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { type PoemCardData } from "@/types"
+
+interface PoemCardProps {
+  poem: PoemCardData
+}
+
+const poems: PoemCardData[] = [
+  {
+    id: "1",
+    title: "The Road Not Taken",
+    author: {
+      id: "1",
+      name: "Robert Frost",
+      image: null
+    },
+    content: "Two roads diverged in a yellow wood...",
+    excerpt: "Two roads diverged in a yellow wood...",
+    createdAt: new Date().toISOString(),
+    likes: 150,
+    comments: 23,
+    featured: true
+  },
+  {
+    id: "2",
+    title: "Still I Rise",
+    author: {
+      id: "2",
+      name: "Maya Angelou",
+      image: null
+    },
+    content: "You may write me down in history...",
+    excerpt: "You may write me down in history...",
+    createdAt: new Date().toISOString(),
+    likes: 200,
+    comments: 45,
+    featured: true
+  },
+  {
+    id: "3",
+    title: "Sonnet 18",
+    author: {
+      id: "3",
+      name: "William Shakespeare",
+      image: null
+    },
+    content: "Shall I compare thee to a summer's day?",
+    excerpt: "Shall I compare thee to a summer's day?",
+    createdAt: new Date().toISOString(),
+    likes: 180,
+    comments: 34,
+    featured: false
+  }
+]
 
 export default function ExplorePage() {
   return (
@@ -18,7 +71,7 @@ export default function ExplorePage() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input type="search" placeholder="Search poems or poets..." className="w-full pl-9" />
         </div>
-        <Button variant="outline">Filter</Button>
+        <Button className={buttonVariants({ variant: "outline" })} type="button">Filter</Button>
       </div>
 
       <Tabs defaultValue="trending" className="mb-8">
@@ -57,7 +110,7 @@ export default function ExplorePage() {
         <TabsContent value="following" className="mt-6">
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="mb-4 text-muted-foreground">Sign in to see poems from poets you follow</p>
-            <Button asChild>
+            <Button className={buttonVariants()} asChild>
               <Link href="/signin">Sign In</Link>
             </Button>
           </div>
@@ -65,23 +118,23 @@ export default function ExplorePage() {
       </Tabs>
 
       <div className="mt-12 flex justify-center">
-        <Button variant="outline">Load More</Button>
+        <Button className={buttonVariants({ variant: "outline" })} type="button">Load More</Button>
       </div>
     </div>
   )
 }
 
-function PoemCard({ poem }) {
+function PoemCard({ poem }: PoemCardProps) {
   return (
     <div className="group relative overflow-hidden rounded-lg border bg-background p-6 shadow transition-all hover:shadow-lg">
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <img
-            src={poem.authorAvatar || "/placeholder.svg"}
-            alt={poem.author}
+            src={poem.author.image || "/placeholder.svg"}
+            alt={poem.author.name}
             className="h-8 w-8 rounded-full object-cover"
           />
-          <span className="text-sm font-medium">{poem.author}</span>
+          <span className="text-sm font-medium">{poem.author.name}</span>
         </div>
         <h3 className="text-xl font-bold">{poem.title}</h3>
         <div className="prose prose-sm max-w-none">
@@ -106,74 +159,4 @@ function PoemCard({ poem }) {
     </div>
   )
 }
-
-// Sample data
-const poems = [
-  {
-    id: "1",
-    title: "Whispers of Dawn",
-    author: "Elena Rivera",
-    authorAvatar: "/placeholder.svg?height=32&width=32",
-    excerpt:
-      "Morning light filters through leaves,\nDew-kissed petals unfold their secrets,\nAs the world awakens to possibility,\nI find myself renewed.",
-    likes: 124,
-    comments: 18,
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Urban Symphony",
-    author: "Marcus Chen",
-    authorAvatar: "/placeholder.svg?height=32&width=32",
-    excerpt:
-      "Concrete canyons echo with footsteps,\nA thousand lives intersecting,\nIn this moment, this breath,\nWe are all connected.",
-    likes: 89,
-    comments: 12,
-    featured: true,
-  },
-  {
-    id: "3",
-    title: "Ocean Memories",
-    author: "Sophia Williams",
-    authorAvatar: "/placeholder.svg?height=32&width=32",
-    excerpt:
-      "Salt-tinged air carries memories,\nWaves crash against forgotten shores,\nTime erases footprints in sand,\nBut the heart remembers.",
-    likes: 156,
-    comments: 24,
-    featured: true,
-  },
-  {
-    id: "4",
-    title: "Midnight Thoughts",
-    author: "James Peterson",
-    authorAvatar: "/placeholder.svg?height=32&width=32",
-    excerpt:
-      "Stars punctuate the darkness,\nSilence wraps around my shoulders,\nThoughts drift like clouds,\nIn the vast night sky of my mind.",
-    likes: 72,
-    comments: 8,
-    featured: false,
-  },
-  {
-    id: "5",
-    title: "Autumn Dance",
-    author: "Olivia Martinez",
-    authorAvatar: "/placeholder.svg?height=32&width=32",
-    excerpt:
-      "Crimson and gold twirl in the breeze,\nNature's last waltz before sleep,\nI watch, mesmerized by the rhythm,\nOf endings that promise new beginnings.",
-    likes: 103,
-    comments: 15,
-    featured: false,
-  },
-  {
-    id: "6",
-    title: "Fragments",
-    author: "David Kim",
-    authorAvatar: "/placeholder.svg?height=32&width=32",
-    excerpt:
-      "Pieces of myself scattered,\nAcross time and memory,\nI gather what I can hold,\nAnd release what I cannot.",
-    likes: 67,
-    comments: 9,
-    featured: false,
-  },
-]
 

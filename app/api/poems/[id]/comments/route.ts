@@ -1,51 +1,94 @@
-import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { z } from "zod"
-
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-const commentSchema = z.object({
-  content: z.string().min(1).max(500),
-})
-
-export async function POST(
-  req: Request,
+export async function GET(
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession()
-    
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get("page") || "1")
+    const limit = parseInt(searchParams.get("limit") || "10")
+    const skip = (page - 1) * limit
+
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: { poemId: params.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      }),
+      prisma.comment.count({
+        where: { poemId: params.id },
+      }),
+    ])
+
+    return NextResponse.json({
+      comments,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
+    })
+  } catch (error) {
+    console.error("Get Comments API Error:", error)
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    const body = await req.json()
-    const result = commentSchema.safeParse(body)
-
-    if (!result.success) {
       return NextResponse.json(
-        { message: "Invalid input", errors: result.error.errors },
-        { status: 400 }
+        { error: "Unauthorized" },
+        { status: 401 }
       )
     }
 
-    const { content } = result.data
-    const poemId = params.id
-
-    // Check if poem exists
     const poem = await prisma.poem.findUnique({
-      where: { id: poemId },
+      where: { id: params.id },
+      select: { id: true },
     })
 
     if (!poem) {
-      return NextResponse.json({ message: "Poem not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Poem not found" },
+        { status: 404 }
+      )
+    }
+
+    const body = await request.json()
+    const { content } = body
+
+    if (!content) {
+      return NextResponse.json(
+        { error: "Content is required" },
+        { status: 400 }
+      )
     }
 
     const comment = await prisma.comment.create({
       data: {
         content,
         authorId: session.user.id,
-        poemId,
+        poemId: params.id,
       },
       include: {
         author: {
@@ -58,51 +101,11 @@ export async function POST(
       },
     })
 
-    return NextResponse.json(comment, { status: 201 })
+    return NextResponse.json(comment)
   } catch (error) {
-    console.error("Create comment error:", error)
+    console.error("Create Comment API Error:", error)
     return NextResponse.json(
-      { message: "Something went wrong" },
-      { status: 500 }
-    )
-  }
-}
-
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const take = parseInt(searchParams.get("take") ?? "10")
-    const skip = parseInt(searchParams.get("skip") ?? "0")
-    const poemId = params.id
-
-    const comments = await prisma.comment.findMany({
-      where: {
-        poemId,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take,
-      skip,
-    })
-
-    return NextResponse.json(comments)
-  } catch (error) {
-    console.error("Get comments error:", error)
-    return NextResponse.json(
-      { message: "Something went wrong" },
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }

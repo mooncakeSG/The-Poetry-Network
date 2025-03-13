@@ -4,150 +4,138 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    const { searchParams } = new URL(req.url)
-    
+    const { searchParams } = new URL(request.url)
     const query = searchParams.get("q") || ""
-    const page = parseInt(searchParams.get("page") || "1")
+    const type = searchParams.get("type") || "all"
     const limit = parseInt(searchParams.get("limit") || "10")
-    const sort = searchParams.get("sort") || "latest"
-    const filter = searchParams.get("filter") || "all"
-    const tag = searchParams.get("tag")
-    
-    const skip = (page - 1) * limit
 
-    // Build the where clause
-    let where: any = {
-      published: true,
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
+    if (!query) {
+      return NextResponse.json(
+        { error: "Search query is required" },
+        { status: 400 }
+      )
     }
 
-    // Add tag filter if specified
-    if (tag) {
-      where.tags = {
-        some: {
-          name: tag,
-        },
-      }
-    }
+    const results = await Promise.all([
+      // Search poems
+      type === "all" || type === "poems"
+        ? prisma.poem.findMany({
+            where: {
+              published: true,
+              OR: [
+                { title: { contains: query } },
+                { content: { contains: query } },
+              ],
+            },
+            take: limit,
+            include: {
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                },
+              },
+              tags: true,
+              _count: {
+                select: {
+                  likes: true,
+                  comments: true,
+                },
+              },
+              ...(session?.user && {
+                likes: {
+                  where: { userId: session.user.id },
+                  select: { userId: true },
+                },
+              }),
+            },
+          })
+        : [],
 
-    // Add following filter if specified
-    if (filter === "following" && session?.user?.id) {
-      where.author = {
-        followers: {
-          some: {
-            followerId: session.user.id,
-          },
-        },
-      }
-    }
-
-    // Build the orderBy clause based on sort parameter
-    let orderBy: any = { createdAt: "desc" }
-    switch (sort) {
-      case "trending":
-        orderBy = [
-          { likes: { _count: "desc" } },
-          { comments: { _count: "desc" } },
-          { createdAt: "desc" },
-        ]
-        break
-      case "most_liked":
-        orderBy = [
-          { likes: { _count: "desc" } },
-          { createdAt: "desc" },
-        ]
-        break
-      case "most_commented":
-        orderBy = [
-          { comments: { _count: "desc" } },
-          { createdAt: "desc" },
-        ]
-        break
-    }
-
-    const [poems, total] = await Promise.all([
-      prisma.poem.findMany({
-        where,
-        include: {
-          author: {
+      // Search users
+      type === "all" || type === "users"
+        ? prisma.user.findMany({
+            where: {
+              OR: [
+                { name: { contains: query } },
+                { email: { contains: query } },
+              ],
+            },
+            take: limit,
             select: {
               id: true,
               name: true,
+              email: true,
               image: true,
+              bio: true,
+              _count: {
+                select: {
+                  poems: true,
+                  followers: true,
+                  following: true,
+                },
+              },
             },
-          },
-          tags: {
-            select: {
-              name: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-            },
-          },
-          likes: session?.user?.id ? {
+          })
+        : [],
+
+      // Search tags
+      type === "all" || type === "tags"
+        ? prisma.tag.findMany({
             where: {
-              userId: session.user.id,
+              name: { contains: query },
             },
-            select: {
-              userId: true,
+            take: limit,
+            include: {
+              _count: {
+                select: {
+                  poems: true,
+                },
+              },
             },
-          } : false,
-        },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      prisma.poem.count({ where }),
+          })
+        : [],
     ])
 
-    // Get popular tags
-    const popularTags = await prisma.tag.findMany({
-      select: {
-        name: true,
-        _count: {
-          select: {
-            poems: true,
-          },
-        },
-      },
-      orderBy: {
-        poems: {
-          _count: "desc",
-        },
-      },
-      take: 10,
-    })
-
-    // Transform the poems to include userLiked and format tags
-    const transformedPoems = poems.map((poem) => ({
-      ...poem,
-      userLiked: session?.user?.id ? poem.likes.length > 0 : false,
-      tags: poem.tags.map((tag) => tag.name),
-      likes: undefined, // Remove the likes array from the response
-    }))
-
     return NextResponse.json({
-      poems: transformedPoems,
-      total,
-      hasMore: skip + poems.length < total,
-      popularTags: popularTags.map((tag) => ({
-        name: tag.name,
-        count: tag._count.poems,
-      })),
+      poems: results[0],
+      users: results[1],
+      tags: results[2],
     })
   } catch (error) {
-    console.error("Error searching poems:", error)
+    console.error("Search API Error:", error)
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { error: "Internal Server Error" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GETMockTags(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const limit = parseInt(searchParams.get("limit") || "10")
+
+  try {
+    // For now, return some mock tags until we implement tag functionality
+    const mockTags = [
+      { name: "Nature", count: 42 },
+      { name: "Love", count: 38 },
+      { name: "Life", count: 35 },
+      { name: "Hope", count: 28 },
+      { name: "Dreams", count: 25 },
+    ].slice(0, limit)
+
+    return NextResponse.json({
+      popularTags: mockTags,
+    })
+  } catch (error) {
+    console.error("Search API Error:", error)
+    return NextResponse.json(
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }

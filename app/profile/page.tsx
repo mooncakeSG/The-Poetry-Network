@@ -187,7 +187,7 @@ function PoemCard({ poem }) {
         </div>
       </div>
       <Link
-        href={`/poems/${poem.id}`}
+        href={`/poems/${poem.poemId}`}
         className="absolute inset-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         aria-label={`Read ${poem.title}`}
       />

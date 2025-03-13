@@ -1,11 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { ArrowLeft, Heart, MessageCircle, Share } from "lucide-react"
+import { ArrowLeft, Heart, MessageCircle } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -14,22 +13,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Comment } from "@/components/comment"
 import { CommentForm } from "@/components/comment-form"
 import { ShareButton } from "@/components/share-button"
-
-interface Poem {
-  id: string
-  title: string
-  content: string
-  createdAt: string
-  author: {
-    id: string
-    name: string
-    image: string | null
-  }
-  _count: {
-    likes: number
-    comments: number
-  }
-}
+import { type PoemDetailData } from "@/types"
 
 interface Comment {
   id: string
@@ -47,7 +31,7 @@ export default function PoemPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const { toast } = useToast()
-  const [poem, setPoem] = useState<Poem | null>(null)
+  const [poem, setPoem] = useState<PoemDetailData | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingComments, setIsLoadingComments] = useState(true)
@@ -63,13 +47,8 @@ export default function PoemPage() {
         if (!response.ok) throw new Error("Failed to fetch poem")
         const data = await response.json()
         setPoem(data)
-
-        const likesResponse = await fetch(`/api/poems/${params.poemId}/like`)
-        if (likesResponse.ok) {
-          const { likesCount, userLiked } = await likesResponse.json()
-          setLikesCount(likesCount)
-          setIsLiked(userLiked)
-        }
+        setLikesCount(data._count.likes)
+        setIsLiked(data.userLiked)
       } catch (error) {
         console.error("Error fetching poem:", error)
         toast({
@@ -86,36 +65,29 @@ export default function PoemPage() {
   }, [params.poemId, toast])
 
   useEffect(() => {
-    fetchComments()
-  }, [params.poemId])
-
-  async function fetchComments(reset = false) {
-    const pageToFetch = reset ? 1 : page
-    setIsLoadingComments(true)
-
-    try {
-      const response = await fetch(
-        `/api/poems/${params.poemId}/comments?page=${pageToFetch}&limit=10`
-      )
-      if (!response.ok) throw new Error("Failed to fetch comments")
-      const data = await response.json()
-
-      setComments((prev) =>
-        reset ? data.comments : [...prev, ...data.comments]
-      )
-      setHasMore(data.hasMore)
-      if (!reset) setPage((p) => p + 1)
-    } catch (error) {
-      console.error("Error fetching comments:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load comments",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoadingComments(false)
+    async function fetchComments() {
+      try {
+        const response = await fetch(
+          `/api/poems/${params.poemId}/comments?page=${page}&limit=10`
+        )
+        if (!response.ok) throw new Error("Failed to fetch comments")
+        const data = await response.json()
+        setComments((prev) => [...prev, ...data.comments])
+        setHasMore(data.hasMore)
+      } catch (error) {
+        console.error("Error fetching comments:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load comments",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingComments(false)
+      }
     }
-  }
+
+    fetchComments()
+  }, [params.poemId, page, toast])
 
   async function handleLike() {
     if (!session) {
@@ -144,10 +116,6 @@ export default function PoemPage() {
         variant: "destructive",
       })
     }
-  }
-
-  function handleCommentAdded() {
-    fetchComments(true)
   }
 
   if (isLoading) {
@@ -225,7 +193,7 @@ export default function PoemPage() {
 
         <Separator />
 
-        <footer className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -234,52 +202,78 @@ export default function PoemPage() {
               onClick={handleLike}
             >
               <Heart
-                className={`h-5 w-5 ${isLiked ? "fill-current text-red-500" : ""}`}
+                className={`h-5 w-5 ${
+                  isLiked ? "fill-current text-red-500" : ""
+                }`}
               />
               <span>{likesCount}</span>
             </Button>
-            <Button variant="ghost" size="sm" className="space-x-2">
-              <MessageCircle className="h-5 w-5" />
-              <span>{poem._count.comments}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="space-x-2"
+              asChild
+            >
+              <Link href="#comments">
+                <MessageCircle className="h-5 w-5" />
+                <span>{poem._count.comments}</span>
+              </Link>
             </Button>
           </div>
           <ShareButton poemId={poem.id} title={poem.title} />
-        </footer>
-      </article>
-
-      <div className="mt-12 space-y-8">
-        <h2 className="text-2xl font-bold">Comments</h2>
-        <CommentForm poemId={poem.id} onCommentAdded={handleCommentAdded} />
-
-        <div className="space-y-6">
-          {comments.map((comment) => (
-            <Comment key={comment.id} comment={comment} />
-          ))}
-
-          {isLoadingComments && (
-            <div className="flex justify-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            </div>
-          )}
-
-          {!isLoadingComments && hasMore && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => fetchComments()}
-              >
-                Load More Comments
-              </Button>
-            </div>
-          )}
-
-          {!isLoadingComments && comments.length === 0 && (
-            <p className="text-center text-muted-foreground">
-              No comments yet. Be the first to share your thoughts!
-            </p>
-          )}
         </div>
-      </div>
+
+        <Separator />
+
+        <section id="comments" className="space-y-6">
+          <h2 className="text-2xl font-bold">Comments</h2>
+          {session ? (
+            <CommentForm poemId={poem.id} />
+          ) : (
+            <div className="rounded-lg border bg-card p-4 text-card-foreground">
+              <p className="text-center text-muted-foreground">
+                Please{" "}
+                <Link href="/signin" className="text-primary hover:underline">
+                  sign in
+                </Link>{" "}
+                to leave a comment
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {isLoadingComments ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="h-4 w-1/4 rounded bg-muted" />
+                    <div className="h-4 w-3/4 rounded bg-muted" />
+                  </div>
+                ))}
+              </div>
+            ) : comments.length > 0 ? (
+              <>
+                {comments.map((comment) => (
+                  <Comment key={comment.id} comment={comment} />
+                ))}
+                {hasMore && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Load More Comments
+                  </Button>
+                )}
+              </>
+            ) : (
+              <p className="text-center text-muted-foreground">
+                No comments yet. Be the first to comment!
+              </p>
+            )}
+          </div>
+        </section>
+      </article>
     </div>
   )
-} 
+}

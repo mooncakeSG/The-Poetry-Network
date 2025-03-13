@@ -1,68 +1,66 @@
-import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(
-  req: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession()
-    
+    const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
     }
 
-    const poemId = params.id
-    const userId = session.user.id
-
-    // Check if poem exists
     const poem = await prisma.poem.findUnique({
-      where: { id: poemId },
+      where: { id: params.id },
+      select: { id: true },
     })
 
     if (!poem) {
-      return NextResponse.json({ message: "Poem not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Poem not found" },
+        { status: 404 }
+      )
     }
 
-    // Check if user has already liked the poem
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_poemId: {
-          userId,
-          poemId,
+          userId: session.user.id,
+          poemId: params.id,
         },
       },
     })
 
     if (existingLike) {
-      // Unlike the poem
       await prisma.like.delete({
         where: {
           userId_poemId: {
-            userId,
-            poemId,
+            userId: session.user.id,
+            poemId: params.id,
           },
         },
       })
-
       return NextResponse.json({ liked: false })
     }
 
-    // Like the poem
     await prisma.like.create({
       data: {
-        userId,
-        poemId,
+        userId: session.user.id,
+        poemId: params.id,
       },
     })
 
     return NextResponse.json({ liked: true })
   } catch (error) {
-    console.error("Like poem error:", error)
+    console.error("Like Poem API Error:", error)
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }

@@ -38,16 +38,23 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   const [sort, setSort] = useState(searchParams.get("sort") || "latest")
   const [filter, setFilter] = useState(searchParams.get("filter") || "all")
   const [popularTags, setPopularTags] = useState<Tag[]>([])
+  const [isLoadingTags, setIsLoadingTags] = useState(true)
   const [selectedTag, setSelectedTag] = useState<string | undefined>(
     searchParams.get("tag") || undefined
   )
 
   useEffect(() => {
     // Fetch popular tags on component mount
-    fetch("/api/search?limit=1")
+    setIsLoadingTags(true)
+    fetch("/api/search?limit=5")
       .then((res) => res.json())
-      .then((data) => setPopularTags(data.popularTags))
+      .then((data) => {
+        if (data.popularTags) {
+          setPopularTags(data.popularTags)
+        }
+      })
       .catch((error) => console.error("Error fetching tags:", error))
+      .finally(() => setIsLoadingTags(false))
   }, [])
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -96,7 +103,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         </Select>
       </div>
 
-      {popularTags.length > 0 && (
+      {!isLoadingTags && popularTags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {popularTags.map((tag) => (
             <Badge

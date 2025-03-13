@@ -18,31 +18,34 @@ const poemCreateSchema = z.object({
   tags: z.array(z.string()).optional(),
 })
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json(
-        { message: "Unauthorized" },
+        { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    const body = await req.json()
-    
-    // Validate request body
-    const validatedData = poemCreateSchema.parse(body)
+    const body = await request.json()
+    const { title, content, tags, workshopId } = body
 
-    // Create poem with tags
+    if (!title || !content) {
+      return NextResponse.json(
+        { error: "Title and content are required" },
+        { status: 400 }
+      )
+    }
+
     const poem = await prisma.poem.create({
       data: {
-        title: validatedData.title,
-        content: validatedData.content,
-        published: validatedData.published,
+        title,
+        content,
         authorId: session.user.id,
+        workshopId,
         tags: {
-          connectOrCreate: validatedData.tags?.map((tag) => ({
+          connectOrCreate: tags?.map((tag: string) => ({
             where: { name: tag },
             create: { name: tag },
           })) || [],
@@ -56,66 +59,80 @@ export async function POST(req: Request) {
             image: true,
           },
         },
-        tags: {
-          select: { name: true },
-        },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
+        tags: true,
       },
     })
 
-    // Transform the response
-    const transformedPoem = {
-      ...poem,
-      tags: poem.tags.map((tag) => tag.name),
-      likes: poem._count.likes,
-      comments: poem._count.comments,
-      _count: undefined,
-    }
-
-    return NextResponse.json(transformedPoem)
+    return NextResponse.json(poem)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: "Invalid request data", errors: error.errors },
-        { status: 400 }
-      )
-    }
-
-    console.error("Error creating poem:", error)
+    console.error("Create Poem API Error:", error)
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const page = parseInt(searchParams.get("page") || "1")
+  const limit = parseInt(searchParams.get("limit") || "10")
+  const sort = searchParams.get("sort") || "latest"
+  const filter = searchParams.get("filter") || "all"
+  const tag = searchParams.get("tag")
+  const query = searchParams.get("q")
+
   try {
-    const { searchParams } = new URL(req.url)
     const session = await getServerSession(authOptions)
-    
-    const authorId = searchParams.get("authorId")
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "10")
-    const published = searchParams.get("published") !== "false"
-    
     const skip = (page - 1) * limit
 
-    // Only allow users to see their own drafts
-    const where = {
-      ...(authorId && { authorId }),
-      ...(published && { published: true }),
-      ...(!published && session?.user?.id === authorId && { published: false }),
+    let where = {
+      published: true,
+      ...(query && {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { content: { contains: query, mode: "insensitive" } },
+        ],
+      }),
+      ...(tag && {
+        tags: {
+          some: {
+            name: tag,
+          },
+        },
+      }),
+      ...(filter === "following" && session?.user && {
+        author: {
+          followers: {
+            some: {
+              followerId: session.user.id,
+            },
+          },
+        },
+      }),
+    }
+
+    let orderBy = {}
+    switch (sort) {
+      case "trending":
+        orderBy = { likes: { _count: "desc" } }
+        break
+      case "most_liked":
+        orderBy = { likes: { _count: "desc" } }
+        break
+      case "most_commented":
+        orderBy = { comments: { _count: "desc" } }
+        break
+      default:
+        orderBy = { createdAt: "desc" }
     }
 
     const [poems, total] = await Promise.all([
       prisma.poem.findMany({
         where,
+        orderBy,
+        skip,
+        take: limit,
         include: {
           author: {
             select: {
@@ -124,49 +141,28 @@ export async function GET(req: Request) {
               image: true,
             },
           },
-          tags: {
-            select: { name: true },
-          },
+          tags: true,
           _count: {
             select: {
               likes: true,
               comments: true,
             },
           },
-          likes: session?.user?.id
-            ? {
-                where: { userId: session.user.id },
-                select: { userId: true },
-              }
-            : false,
         },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
       }),
       prisma.poem.count({ where }),
     ])
 
-    // Transform the poems
-    const transformedPoems = poems.map((poem) => ({
-      ...poem,
-      userLiked: session?.user?.id ? poem.likes.length > 0 : false,
-      tags: poem.tags.map((tag) => tag.name),
-      likes: poem._count.likes,
-      comments: poem._count.comments,
-      likes: undefined,
-      _count: undefined,
-    }))
-
     return NextResponse.json({
-      poems: transformedPoems,
+      poems,
       total,
-      hasMore: skip + poems.length < total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
     })
   } catch (error) {
-    console.error("Error fetching poems:", error)
+    console.error("Poems API Error:", error)
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }
