@@ -30,6 +30,11 @@
         <mxCell id="orm" value="Prisma ORM" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
           <mxGeometry x="300" y="140" width="200" height="60" as="geometry" />
         </mxCell>
+
+        <!-- AI Services -->
+        <mxCell id="ai" value="OpenAI Integration" style="swimlane;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="300" y="240" width="200" height="60" as="geometry" />
+        </mxCell>
         
         <!-- Connections -->
         <mxCell id="conn1" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="frontend" target="api">
@@ -47,34 +52,65 @@
         <mxCell id="conn4" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="orm" target="database">
           <mxGeometry width="50" height="50" relative="1" as="geometry" />
         </mxCell>
+
+        <mxCell id="conn5" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ai" target="api">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
         
         <!-- Features -->
         <mxCell id="features" value="Features" style="swimlane;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="40" y="340" width="460" height="120" as="geometry" />
+          <mxGeometry x="40" y="340" width="460" height="160" as="geometry" />
         </mxCell>
         
-        <mxCell id="feature1" value="User Authentication" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <!-- Core Features -->
+        <mxCell id="core_features" value="Core Features" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
           <mxGeometry x="60" y="360" width="120" height="20" as="geometry" />
         </mxCell>
-        
-        <mxCell id="feature2" value="Draft System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+
+        <mxCell id="feature1" value="User Authentication" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="60" y="390" width="120" height="20" as="geometry" />
         </mxCell>
         
-        <mxCell id="feature3" value="Workshop Management" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="feature2" value="Draft System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="60" y="420" width="120" height="20" as="geometry" />
         </mxCell>
         
-        <mxCell id="feature4" value="Comments &amp; Feedback" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="feature3" value="Workshop Management" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="450" width="120" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- AI Features -->
+        <mxCell id="ai_features" value="AI Features" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
           <mxGeometry x="200" y="360" width="120" height="20" as="geometry" />
         </mxCell>
-        
-        <mxCell id="feature5" value="Search Functionality" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+
+        <mxCell id="feature4" value="Writing Assistant" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="200" y="390" width="120" height="20" as="geometry" />
         </mxCell>
         
-        <mxCell id="feature6" value="Tag System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="feature5" value="Content Generation" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="200" y="420" width="120" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature6" value="Sentiment Analysis" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="200" y="450" width="120" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Privacy Features -->
+        <mxCell id="privacy_features" value="Privacy Features" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="340" y="360" width="120" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feature7" value="Profile Privacy" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="340" y="390" width="120" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feature8" value="Content Visibility" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="340" y="420" width="120" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feature9" value="Interaction Controls" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="340" y="450" width="120" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
