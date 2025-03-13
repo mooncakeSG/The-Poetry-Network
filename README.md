@@ -136,12 +136,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Pusher](https://pusher.com/)
 - [Resend](https://resend.com/)
 
-## 📞 Support
+## 📞 Support & Community
 
-For support, please:
-- Open an issue
-- Email: support@poetrynetwork.com
-- Join our Discord community
+For support and community engagement:
+
+### GitHub
+- [Open an issue](https://github.com/mooncakeSG/The-Poetry-Network/issues) for bug reports and feature requests
+- [Discussions](https://github.com/mooncakeSG/The-Poetry-Network/discussions) for general questions and community interaction
+
+### Discord Community
+Join our vibrant Discord community to:
+- Get help and support
+- Share your work
+- Connect with other writers
+- Participate in workshops
+- Stay updated on announcements
+
+[Join our Discord Server](https://discord.gg/your-invite-link) <!-- Replace with your Discord invite link -->
+
+### Email
+For private inquiries:
+- General Support: poetrynetwork.support@gmail.com <!-- Replace with your support email -->
+- Security Issues: security@poetrynetwork.com <!-- Replace with your security email -->
+
+### Documentation
+- [User Guide](https://github.com/mooncakeSG/The-Poetry-Network/wiki) <!-- Create this wiki -->
+- [API Documentation](https://github.com/mooncakeSG/The-Poetry-Network/wiki/API) <!-- Create this wiki page -->
+- [FAQs](https://github.com/mooncakeSG/The-Poetry-Network/wiki/FAQ) <!-- Create this wiki page -->
 
 ---
 
