@@ -52,6 +52,11 @@ model User {
   emailVerified DateTime?
   image         String?
   bio           String?
+  location      String?
+  website       String?
+  socialLinks   String?   @default("")
+  preferences   String?   @default("")
+  privacy       String?   @default("")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
@@ -65,6 +70,8 @@ model User {
   drafts        Draft[]
   createdWorkshops Workshop[] @relation("CreatedWorkshops")
   feedback      Feedback[]
+  notifications Notification[]
+  notificationsFrom Notification[] @relation("NotificationFrom")
 }
 
 model VerificationToken {
@@ -91,6 +98,7 @@ model Poem {
   likes       Like[]
   comments    Comment[]
   feedback    Feedback[]
+  notifications Notification[]
 
   @@index([authorId])
   @@index([workshopId])
@@ -132,14 +140,13 @@ model Tag {
 }
 
 model Follow {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  followerId  String
-  follower    User     @relation("Following", fields: [followerId], references: [id])
-  followingId String
-  following   User     @relation("Followers", fields: [followingId], references: [id])
+  followerId    String
+  followingId   String
+  follower      User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following     User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
 
-  @@unique([followerId, followingId])
+  @@id([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
 }
@@ -157,6 +164,7 @@ model Workshop {
   members     WorkshopMember[]
   poems       Poem[]
   drafts      Draft[]
+  notifications Notification[]
 
   @@index([creatorId])
 }
@@ -205,5 +213,26 @@ model Draft {
   publishedAt DateTime?
 
   @@index([authorId])
+  @@index([workshopId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // 'follow', 'like', 'comment', 'workshop_invite', etc.
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userFrom  User?    @relation("NotificationFrom", fields: [userFromId], references: [id])
+  userFromId String?
+  poemId    String?
+  poem      Poem?    @relation(fields: [poemId], references: [id], onDelete: Cascade)
+  workshopId String?
+  workshop  Workshop? @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userFromId])
+  @@index([poemId])
   @@index([workshopId])
 }

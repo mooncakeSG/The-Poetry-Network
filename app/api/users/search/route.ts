@@ -1,55 +1,95 @@
-import { getServerSession } from "next-auth"
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
-import { authOptions } from "@/lib/auth"
-import { db } from "@/lib/db"
+interface SearchResponse {
+  users: Array<{
+    id: string
+    name: string | null
+    email: string | null
+    image: string | null
+    bio: string | null
+    _count: {
+      poems: number
+      followers: number
+      following: number
+      workshops: number
+    }
+  }>
+  total: number
+  page: number
+  totalPages: number
+}
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 })
+    if (!session?.user) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const { searchParams } = new URL(req.url)
-    const query = searchParams.get("q")
+    const { searchParams } = new URL(request.url)
+    const query = searchParams.get('q')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const skip = (page - 1) * limit
 
     if (!query) {
-      return NextResponse.json([])
+      return NextResponse.json<SearchResponse>({ users: [], total: 0, page: 1, totalPages: 0 })
     }
 
-    const users = await db.user.findMany({
-      where: {
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-          {
-            email: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-        ],
-        NOT: {
-          id: session.user.id, // Exclude the current user
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { name: { contains: query } },
+            { email: { contains: query } },
+            { bio: { contains: query } },
+          ],
         },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-      },
-      take: 5,
-    })
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          bio: true,
+          _count: {
+            select: {
+              poems: true,
+              followers: true,
+              following: true,
+              workshops: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          followers: {
+            _count: 'desc',
+          },
+        },
+      }),
+      prisma.user.count({
+        where: {
+          OR: [
+            { name: { contains: query } },
+            { email: { contains: query } },
+            { bio: { contains: query } },
+          ],
+        },
+      }),
+    ])
 
-    return NextResponse.json(users)
+    return NextResponse.json<SearchResponse>({
+      users,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    })
   } catch (error) {
-    console.error("[USERS_SEARCH_GET]", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    console.error('Error searching users:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

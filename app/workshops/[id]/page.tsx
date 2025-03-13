@@ -51,10 +51,9 @@ interface Workshop {
   isMember: boolean
 }
 
-export default function WorkshopPage() {
+export default function WorkshopPage({ params }: { params: { id: string } }) {
   const { data: session } = useSession()
   const { toast } = useToast()
-  const params = useParams()
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -63,25 +62,28 @@ export default function WorkshopPage() {
   const [tags, setTags] = useState('')
 
   useEffect(() => {
-    fetchWorkshop()
-  }, [params.id])
-
-  const fetchWorkshop = async () => {
-    try {
-      const response = await fetch(`/api/workshops/${params.id}`)
-      if (!response.ok) throw new Error('Failed to fetch workshop')
-      const data = await response.json()
-      setWorkshop(data)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load workshop',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+    const fetchData = async () => {
+      try {
+        const [workshopRes, membersRes, submissionsRes] = await Promise.all([
+          fetch(`/api/workshops/${params.id}`),
+          fetch(`/api/workshops/${params.id}/members`),
+          fetch(`/api/workshops/${params.id}/submissions`),
+        ]);
+        if (!workshopRes.ok) throw new Error('Failed to fetch workshop')
+        const workshopData = await workshopRes.json()
+        setWorkshop(workshopData)
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load workshop',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
+    };
+    fetchData();
+  }, [params.id, session?.user?.id, toast]);
 
   const handleSubmitPoem = async () => {
     if (!title || !content) {
@@ -155,6 +157,17 @@ export default function WorkshopPage() {
       })
     }
   }
+
+  const handleJoinWorkshop = async () => {
+    try {
+      const response = await fetch(`/api/workshops/${params.id}/members`, {
+        // ... rest of the code ...
+      });
+      // ... rest of the code ...
+    } catch (error) {
+      // ... error handling ...
+    }
+  };
 
   if (loading) {
     return (

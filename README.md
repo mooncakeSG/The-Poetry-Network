@@ -1,30 +1,37 @@
-# The Poetry Network
+# Poetry Network
 
-> ⚠️ **Work in Progress** ⚠️
-> 
-> This project is currently under active development. Features and functionality may change as we continue to build and improve the platform.
+A modern web application for poets and writers to share, collaborate, and improve their craft.
 
-## Overview
+## Features
 
-The Poetry Network is a collaborative platform for poets and writers to share their work, participate in workshops, and receive feedback from the community. It's built with Next.js, TypeScript, and Prisma, providing a modern and responsive web application.
+### AI-Powered Writing Tools
 
-## Features (In Development)
+The application includes a suite of AI-powered tools to enhance the writing experience:
 
-- 🔐 User Authentication
-- 📝 Draft System
-- 📚 Workshop Management
-- 💬 Comments and Feedback
-- 🔍 Search Functionality
-- 🏷️ Tag System
-- 📱 Responsive Design
+1. **Writing Assistant**
+   - Get instant feedback on your writing
+   - Receive suggestions for improvements
+   - Check grammar and style issues
+   - Enhance your writing quality
 
-## Tech Stack
+2. **Content Generator**
+   - Generate poems and short stories from prompts
+   - Get AI-generated content with metadata
+   - Analyze generated content for themes and emotions
+   - Customize content type and style
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js
-- **Testing**: Jest
+3. **Sentiment Analysis**
+   - Analyze the emotional tone of your writing
+   - Detect underlying themes and topics
+   - Get detailed emotion breakdowns
+   - Understand how your writing might be perceived
+
+### Privacy Features
+
+- Granular privacy controls for profiles and content
+- Customizable visibility settings
+- Interaction permissions management
+- Private information filtering
 
 ## Getting Started
 
@@ -33,26 +40,33 @@ The Poetry Network is a collaborative platform for poets and writers to share th
    ```bash
    npm install
    ```
-3. Set up your environment variables:
+3. Set up environment variables:
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
    ```
-4. Run database migrations:
-   ```bash
-   npx prisma migrate dev
+4. Add your OpenAI API key to `.env.local`:
    ```
-5. Start the development server:
+   OPENAI_API_KEY=your_api_key_here
+   ```
+5. Run the development server:
    ```bash
    npm run dev
    ```
 
+## Environment Variables
+
+- `OPENAI_API_KEY`: Your OpenAI API key for AI features
+- `DATABASE_URL`: Your database connection string
+- `NEXTAUTH_SECRET`: Secret for NextAuth.js
+- `NEXTAUTH_URL`: Your application URL
+
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](.github/wiki/Contributing-Guide.md) for details.
-
-## Documentation
-
-For detailed documentation, please visit our [Wiki](.github/wiki/Home.md).
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
 ## License
 

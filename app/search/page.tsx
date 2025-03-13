@@ -1,152 +1,187 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Skeleton } from '@/components/ui/skeleton'
+import { FollowButton } from '@/components/follow-button'
 
-import { SearchBar } from "@/components/search-bar"
-import { PoemCard } from "@/components/poem-card"
-import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
-
-interface Poem {
+interface User {
   id: string
-  title: string
-  content: string
-  author: {
-    id: string
-    name: string
-    image: string
+  name: string
+  email: string
+  image: string | null
+  bio: string | null
+  _count: {
+    poems: number
+    followers: number
+    following: number
+    workshops: number
   }
-  likes: number
-  comments: number
-  isLiked: boolean
-  tags: string[]
-  createdAt: string
 }
 
-interface SearchResults {
-  poems: Poem[]
+interface SearchResponse {
+  users: User[]
   total: number
   page: number
   totalPages: number
-  popularTags: { name: string; count: number }[]
 }
 
 export default function SearchPage() {
+  const { data: session } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [results, setResults] = useState<SearchResults | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const query = searchParams.get('q') || ''
+  const page = parseInt(searchParams.get('page') || '1')
 
-  async function fetchResults(params: {
-    query: string
-    sort: string
-    filter: string
-    tag?: string
-    page?: number
-  }) {
-    setLoading(true)
-    try {
-      const searchUrl = new URL("/api/search", window.location.origin)
-      searchUrl.searchParams.set("q", params.query)
-      searchUrl.searchParams.set("sort", params.sort)
-      searchUrl.searchParams.set("filter", params.filter)
-      if (params.tag) searchUrl.searchParams.set("tag", params.tag)
-      if (params.page) searchUrl.searchParams.set("page", params.page.toString())
-
-      const response = await fetch(searchUrl.toString())
-      const data = await response.json()
-      setResults(data)
-      
-      // Update URL with search parameters
-      const url = new URL(window.location.href)
-      url.searchParams.set("q", params.query)
-      url.searchParams.set("sort", params.sort)
-      url.searchParams.set("filter", params.filter)
-      if (params.tag) url.searchParams.set("tag", params.tag)
-      if (params.page) url.searchParams.set("page", params.page.toString())
-      router.push(url.pathname + url.search)
-    } catch (error) {
-      console.error("Error fetching search results:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchResults, setSearchResults] = useState<SearchResponse | null>(null)
 
   useEffect(() => {
-    // Initial search based on URL parameters
-    const query = searchParams.get("q") || ""
-    const sort = searchParams.get("sort") || "latest"
-    const filter = searchParams.get("filter") || "all"
-    const tag = searchParams.get("tag") || undefined
-    const page = parseInt(searchParams.get("page") || "1")
-    
-    setCurrentPage(page)
-    fetchResults({ query, sort, filter, tag, page })
-  }, [searchParams])
+    if (!session?.user) {
+      router.push('/login')
+      return
+    }
 
-  function handleSearch(params: {
-    query: string
-    sort: string
-    filter: string
-    tag?: string
-  }) {
-    setCurrentPage(1)
-    fetchResults({ ...params, page: 1 })
+    const fetchResults = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fetch(
+          `/api/users/search?q=${encodeURIComponent(query)}&page=${page}`
+        )
+        if (!response.ok) {
+          throw new Error('Failed to fetch search results')
+        }
+        const data = await response.json()
+        setSearchResults(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (query) {
+      fetchResults()
+    } else {
+      setLoading(false)
+    }
+  }, [query, page, session, router])
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const searchQuery = formData.get('q') as string
+    router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
   }
 
-  function handlePageChange(newPage: number) {
-    setCurrentPage(newPage)
-    fetchResults({
-      query: searchParams.get("q") || "",
-      sort: searchParams.get("sort") || "latest",
-      filter: searchParams.get("filter") || "all",
-      tag: searchParams.get("tag") || undefined,
-      page: newPage,
-    })
+  if (!session?.user) {
+    return null
   }
 
   return (
-    <div className="container py-6 space-y-6">
-      <h1 className="text-3xl font-bold">Search Poems</h1>
-      <SearchBar onSearch={handleSearch} />
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8">Search Users</h1>
       
+      <form onSubmit={handleSearch} className="mb-8">
+        <div className="flex gap-4">
+          <Input
+            type="search"
+            name="q"
+            placeholder="Search by name, email, or bio..."
+            defaultValue={query}
+            className="flex-1"
+          />
+          <Button type="submit">Search</Button>
+        </div>
+      </form>
+
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i} className="p-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-      ) : results?.poems.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          No poems found
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {results?.poems.map((poem) => (
-              <PoemCard key={poem.id} poem={poem} />
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
+      ) : searchResults ? (
+        <>
+          <div className="space-y-4">
+            {searchResults.users.map((user) => (
+              <Card key={user.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage src={user.image || undefined} />
+                      <AvatarFallback>
+                        {user.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="font-semibold">{user.name}</h2>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                      {user.bio && (
+                        <p className="text-sm mt-1">{user.bio}</p>
+                      )}
+                      <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                        <span>{user._count.poems} poems</span>
+                        <span>{user._count.followers} followers</span>
+                        <span>{user._count.following} following</span>
+                        <span>{user._count.workshops} workshops</span>
+                      </div>
+                    </div>
+                  </div>
+                  <FollowButton userId={user.id} />
+                </div>
+              </Card>
             ))}
           </div>
-          
-          {results && results.totalPages > 1 && (
-            <div className="flex justify-center gap-2">
+
+          {searchResults.totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-8">
               <Button
                 variant="outline"
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
+                onClick={() =>
+                  router.push(`/search?q=${query}&page=${page - 1}`)
+                }
+                disabled={page === 1}
               >
                 Previous
               </Button>
+              <span className="py-2 px-4">
+                Page {page} of {searchResults.totalPages}
+              </span>
               <Button
                 variant="outline"
-                disabled={currentPage === results.totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
+                onClick={() =>
+                  router.push(`/search?q=${query}&page=${page + 1}`)
+                }
+                disabled={page === searchResults.totalPages}
               >
                 Next
               </Button>
             </div>
           )}
-        </div>
+        </>
+      ) : (
+        <p className="text-gray-500">
+          Enter a search query to find users
+        </p>
       )}
     </div>
   )

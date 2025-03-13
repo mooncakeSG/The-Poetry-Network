@@ -29,11 +29,10 @@ interface Workshop {
   }[]
 }
 
-export default function WorkshopSettingsPage() {
+export default function WorkshopSettingsPage({ params }: { params: { id: string } }) {
   const { data: session } = useSession()
   const { toast } = useToast()
   const router = useRouter()
-  const params = useParams()
   const [workshop, setWorkshop] = useState<Workshop | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -43,29 +42,31 @@ export default function WorkshopSettingsPage() {
   const [maxMembers, setMaxMembers] = useState(20)
 
   useEffect(() => {
-    fetchWorkshop()
-  }, [params.id])
-
-  const fetchWorkshop = async () => {
-    try {
-      const response = await fetch(`/api/workshops/${params.id}`)
-      if (!response.ok) throw new Error('Failed to fetch workshop')
-      const data = await response.json()
-      setWorkshop(data)
-      setTitle(data.title)
-      setDescription(data.description)
-      setIsPrivate(data.isPrivate)
-      setMaxMembers(data.maxMembers)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load workshop settings',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+    const fetchData = async () => {
+      try {
+        const [workshopRes, membersRes] = await Promise.all([
+          fetch(`/api/workshops/${params.id}`),
+          fetch(`/api/workshops/${params.id}/members`),
+        ]);
+        if (!workshopRes.ok) throw new Error('Failed to fetch workshop')
+        const workshopData = await workshopRes.json()
+        setWorkshop(workshopData)
+        setTitle(workshopData.title)
+        setDescription(workshopData.description)
+        setIsPrivate(workshopData.isPrivate)
+        setMaxMembers(workshopData.maxMembers)
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load workshop settings',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
+    };
+    fetchData();
+  }, [params.id, toast]);
 
   const handleSaveSettings = async () => {
     if (!title || !description) {
@@ -132,6 +133,67 @@ export default function WorkshopSettingsPage() {
       })
     }
   }
+
+  const handleUpdateMemberRole = async (memberId: string, role: string) => {
+    try {
+      const response = await fetch(
+        `/api/workshops/${params.id}/members/${memberId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            role,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update member role');
+
+      setWorkshop(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          members: prev.members.map(m =>
+            m.id === memberId ? { ...m, role } : m
+          )
+        };
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Member role updated successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update member role',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteWorkshop = async () => {
+    try {
+      const response = await fetch(`/api/workshops/${params.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete workshop');
+
+      toast({
+        title: 'Success',
+        description: 'Workshop deleted successfully',
+      });
+
+      router.push('/workshops');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete workshop',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -260,6 +322,16 @@ export default function WorkshopSettingsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mt-8">
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDeleteWorkshop}
+        >
+          Delete Workshop
+        </Button>
       </div>
     </div>
   )
