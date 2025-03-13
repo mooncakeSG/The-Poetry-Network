@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-03-13T16:00:00.000Z" agent="Mozilla/5.0" version="21.6.6" etag="your-etag" type="device">
+  <diagram name="Page-1" id="architecture">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Frontend Layer -->
+        <mxCell id="frontend" value="Frontend (Next.js)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- API Layer -->
+        <mxCell id="api" value="API Routes" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="140" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Database Layer -->
+        <mxCell id="database" value="Database (PostgreSQL)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Authentication -->
+        <mxCell id="auth" value="NextAuth.js" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- ORM -->
+        <mxCell id="orm" value="Prisma ORM" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="300" y="140" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Connections -->
+        <mxCell id="conn1" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="frontend" target="api">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="conn2" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="api" target="database">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="conn3" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="auth" target="api">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="conn4" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="orm" target="database">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Features -->
+        <mxCell id="features" value="Features" style="swimlane;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="340" width="460" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature1" value="User Authentication" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="360" width="120" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature2" value="Draft System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="390" width="120" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature3" value="Workshop Management" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="420" width="120" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature4" value="Comments &amp; Feedback" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="200" y="360" width="120" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature5" value="Search Functionality" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="200" y="390" width="120" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="feature6" value="Tag System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="200" y="420" width="120" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile> 
