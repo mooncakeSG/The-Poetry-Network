@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum ContentType {
+  POEM
+  SHORT_STORY
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  image         String?
+  bio           String?
+  location      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  poems         Poem[]
+  comments      Comment[]
+  likes         Like[]
+  followers     Follows[] @relation("following")
+  following     Follows[] @relation("follower")
+  workshops     Workshop[]
+  savedPoems    SavedPoem[]
+  workshopMemberships WorkshopMember[]
+  workshopSubmissions WorkshopSubmission[]
+  sentInvitations     WorkshopInvitation[] @relation("invitedBy")
+  receivedInvitations WorkshopInvitation[] @relation("invitedUser")
+}
+
+model Poem {
+  id          String      @id @default(cuid())
+  title       String
+  content     String
+  type        ContentType @default(POEM)
+  published   Boolean     @default(true)
+  featured    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  comments    Comment[]
+  likes       Like[]
+  savedBy     SavedPoem[]
+  tags        Tag[]
+
+  @@index([authorId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+
+  @@index([authorId])
+  @@index([submissionId])
+}
+
+model Like {
+  // Relations
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  poem      Poem      @relation(fields: [poemId], references: [id])
+  poemId    String
+  createdAt DateTime  @default(now())
+
+  @@id([userId, poemId])
+}
+
+model SavedPoem {
+  // Relations
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  poem      Poem      @relation(fields: [poemId], references: [id])
+  poemId    String
+  createdAt DateTime  @default(now())
+
+  @@id([userId, poemId])
+}
+
+model Follows {
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("following", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+}
+
+model Workshop {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  isPrivate   Boolean   @default(false)
+  maxMembers  Int       @default(20)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  categoryId  String?
+  category    WorkshopCategory? @relation(fields: [categoryId], references: [id])
+  tags        WorkshopTag[]
+
+  // Relations
+  host        User      @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  hostId      String
+  members     WorkshopMember[]
+  submissions WorkshopSubmission[]
+  invitations WorkshopInvitation[]
+  events      WorkshopEvent[]
+  
+  @@index([hostId])
+}
+
+model WorkshopMember {
+  id          String    @id @default(cuid())
+  role        String    @default("MEMBER") // MEMBER, MODERATOR
+  joinedAt    DateTime  @default(now())
+  
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workshop    Workshop  @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  workshopId  String
+  feedback    WorkshopFeedback[]
+
+  @@unique([userId, workshopId])
+  @@index([userId])
+  @@index([workshopId])
+}
+
+model WorkshopSubmission {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  status      String    @default("DRAFT") // DRAFT, SUBMITTED, REVIEWED
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  workshop    Workshop  @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  workshopId  String
+  feedback    WorkshopFeedback[]
+
+  @@index([authorId])
+  @@index([workshopId])
+}
+
+model WorkshopFeedback {
+  id          String    @id @default(cuid())
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  author      WorkshopMember  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  submission  WorkshopSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+
+  @@index([authorId])
+  @@index([submissionId])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  poems     Poem[]
+  createdAt DateTime  @default(now())
+}
+
+model WorkshopInvitation {
+  id          String    @id @default(cuid())
+  email       String?
+  code        String    @unique
+  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  workshop    Workshop  @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  workshopId  String
+  invitedBy   User      @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedById String
+  invitedUser User?     @relation("invitedUser", fields: [invitedUserId], references: [id], onDelete: SetNull)
+  invitedUserId String?
+
+  @@index([workshopId])
+  @@index([invitedById])
+  @@index([invitedUserId])
+}
+
+model Submission {
+  id        String      @id @default(cuid())
+  title     String
+  content   String      @db.Text
+  type      ContentType @default(POEM)
+  notes     String?     @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  workshopId String
+
+  comments Comment[]
+
+  @@index([authorId])
+  @@index([workshopId])
+}
+
+model WorkshopCategory {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  workshops   Workshop[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model WorkshopTag {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  workshops   Workshop[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model WorkshopEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  type        String    // "meeting" | "deadline" | "feedback"
+  workshopId  String
+  workshop    Workshop  @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workshopId])
+}
