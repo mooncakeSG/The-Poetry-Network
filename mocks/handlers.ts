@@ -1,8 +1,8 @@
-import { rest } from "msw"
+import { http } from "msw"
 
 export const handlers = [
   // Mock workshop endpoints
-  rest.get("/api/workshops", (req, res, ctx) => {
+  http.get("/api/workshops", (req: any, res: any, ctx: any) => {
     return res(
       ctx.status(200),
       ctx.json([
