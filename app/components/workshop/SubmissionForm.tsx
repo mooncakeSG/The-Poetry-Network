@@ -28,10 +28,10 @@ const formSchema = z.object({
 })
 
 interface SubmissionFormProps {
-  workshopId: string
+  id: string
 }
 
-export function SubmissionForm({ workshopId }: SubmissionFormProps) {
+export function SubmissionForm({ id }: SubmissionFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -48,7 +48,7 @@ export function SubmissionForm({ workshopId }: SubmissionFormProps) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true)
-      const response = await fetch(`/api/workshops/${workshopId}/submissions`, {
+      const response = await fetch(`/api/workshops/${id}/submissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
@@ -60,7 +60,7 @@ export function SubmissionForm({ workshopId }: SubmissionFormProps) {
 
       toast.success('Submission created successfully')
       router.refresh()
-      router.push(`/workshops/${workshopId}/submissions`)
+      router.push(`/workshops/${id}/submissions`)
     } catch (error) {
       toast.error('Something went wrong')
     } finally {

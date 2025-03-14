@@ -90,7 +90,7 @@ export default async function WorkshopPage({
 
           {session?.user && !isHost && (
             <WorkshopActions
-              workshopId={workshop.id}
+              id={workshop.id}
               isParticipant={isParticipant}
               isFull={isFull}
             />

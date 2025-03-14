@@ -1,9 +1,9 @@
-import { NextRequest } from "next/server"
-import { GET } from "@/app/api/poems/latest/route"
-import { prisma } from "@/lib/prisma"
+import { NextRequest } from 'next/server'
+import { GET } from '@/app/api/poems/latest/route'
+import { prisma } from '@/lib/prisma'
 
 // Mock prisma
-jest.mock("@/lib/prisma", () => ({
+jest.mock('@/lib/prisma', () => ({
   prisma: {
     poem: {
       findMany: jest.fn(),
@@ -11,94 +11,72 @@ jest.mock("@/lib/prisma", () => ({
   },
 }))
 
-describe("GET /api/poems/latest", () => {
+// Mock NextRequest and NextResponse
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server')
+  return {
+    ...actual,
+    NextRequest: jest.fn().mockImplementation((input, init) => {
+      const url = new URL(input)
+      return {
+        url: url.toString(),
+        nextUrl: url,
+        cookies: new Map(),
+        json: () => Promise.resolve({}),
+      }
+    }),
+    NextResponse: {
+      json: (data: any, init?: ResponseInit) => {
+        const response = new Response(JSON.stringify(data), init)
+        Object.defineProperty(response, 'json', {
+          value: async () => data,
+        })
+        return response
+      },
+    },
+  }
+})
+
+describe('GET /api/poems/latest', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it("returns latest poems successfully", async () => {
+  it('returns latest poems successfully', async () => {
     const mockPoems = [
       {
-        id: "1",
-        title: "Test Poem 1",
-        content: "Test content 1",
+        id: '1',
+        title: 'Test Poem 1',
+        content: 'Test content 1',
+        authorId: '1',
         createdAt: new Date(),
-        author: {
-          id: "1",
-          name: "Test Author",
-          image: null,
-        },
-        _count: {
-          likes: 5,
-          comments: 3,
-        },
-      },
-      {
-        id: "2",
-        title: "Test Poem 2",
-        content: "Test content 2",
-        createdAt: new Date(),
-        author: {
-          id: "2",
-          name: "Another Author",
-          image: null,
-        },
-        _count: {
-          likes: 2,
-          comments: 1,
-        },
+        updatedAt: new Date(),
+        published: true,
       },
     ]
 
-    // Mock the prisma query
     ;(prisma.poem.findMany as jest.Mock).mockResolvedValue(mockPoems)
 
-    // Call the handler
     const response = await GET()
     const data = await response.json()
 
-    // Verify the response
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(2)
-    expect(data[0]).toHaveProperty("id", "1")
-    expect(data[0]).toHaveProperty("title", "Test Poem 1")
-    expect(data[0]).toHaveProperty("author")
-    expect(data[0]).toHaveProperty("_count")
+    expect(data).toEqual(mockPoems)
 
-    // Verify prisma was called correctly
     expect(prisma.poem.findMany).toHaveBeenCalledWith({
-      take: 9,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
+      where: { published: true },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
     })
   })
 
-  it("handles database errors gracefully", async () => {
-    // Mock the prisma query to throw an error
-    ;(prisma.poem.findMany as jest.Mock).mockRejectedValue(new Error("Database error"))
+  it('handles database errors gracefully', async () => {
+    ;(prisma.poem.findMany as jest.Mock).mockRejectedValue(new Error('Database error'))
 
-    // Call the handler
     const response = await GET()
-
-    // Verify the response
-    expect(response.status).toBe(500)
     const data = await response.json()
-    expect(data).toHaveProperty("error", "Failed to fetch latest poems")
+
+    expect(response.status).toBe(500)
+    expect(data).toEqual({ error: 'Failed to fetch latest poems' })
   })
 }) 

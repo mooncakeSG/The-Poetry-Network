@@ -1,15 +1,10 @@
-import { NextRequest } from "next/server"
-import { POST, DELETE } from "@/app/api/workshops/[id]/participants/route"
-import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-
-// Mock next-auth
-jest.mock("next-auth", () => ({
-  getServerSession: jest.fn(),
-}))
+import { NextRequest } from 'next/server'
+import { POST, DELETE } from '@/app/api/workshops/[id]/participants/route'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
 
 // Mock prisma
-jest.mock("@/lib/prisma", () => ({
+jest.mock('@/lib/prisma', () => ({
   prisma: {
     workshop: {
       findUnique: jest.fn(),
@@ -23,101 +18,143 @@ jest.mock("@/lib/prisma", () => ({
   },
 }))
 
-describe("Workshop Participants API", () => {
-  const mockWorkshopId = "workshop-123"
-  const mockUserId = "user-123"
+// Mock next-auth
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(),
+}))
+
+// Mock NextRequest and NextResponse
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server')
+  return {
+    ...actual,
+    NextRequest: jest.fn().mockImplementation((input, init) => {
+      const url = new URL(input)
+      return {
+        url: url.toString(),
+        nextUrl: url,
+        cookies: new Map(),
+        json: () => Promise.resolve({}),
+      }
+    }),
+    NextResponse: {
+      json: (data: any, init?: ResponseInit) => {
+        const response = new Response(JSON.stringify(data), init)
+        Object.defineProperty(response, 'json', {
+          value: async () => data,
+        })
+        return response
+      },
+    },
+  }
+})
+
+describe('Workshop Participants API', () => {
+  const mockWorkshopId = '1'
+  const mockUserId = '1'
 
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  describe("POST /api/workshops/[id]/participants", () => {
-    it("adds user to workshop when authenticated", async () => {
-      const mockSession = {
-        user: {
-          id: mockUserId,
-          name: "Test User",
-          email: "test@example.com",
-        },
-      }
-
-      // Mock the session
-      ;(getServerSession as jest.Mock).mockResolvedValue(mockSession)
+  describe('POST /api/workshops/[id]/participants', () => {
+    it('adds user to workshop when authenticated', async () => {
+      // Mock authentication
+      (getServerSession as jest.Mock).mockResolvedValue({
+        user: { id: mockUserId },
+      })
 
       // Mock workshop exists and has space
-      ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue({
+      const mockWorkshop = {
         id: mockWorkshopId,
         maxParticipants: 10,
-        _count: {
-          participants: 5,
-        },
-      })
-
-      // Mock participant creation
-      ;(prisma.workshopParticipant.create as jest.Mock).mockResolvedValue({
-        id: "1",
-        userId: mockUserId,
-        workshopId: mockWorkshopId,
-        joinedAt: new Date(),
-      })
-
-      // Create request
-      const request = new NextRequest(
-        new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
-        {
-          method: "POST",
-        }
-      )
-
-      // Call the handler with params
-      const response = await POST(request, { params: { id: mockWorkshopId } })
-
-      // Verify the response
-      expect(response.status).toBe(201)
-      const data = await response.json()
-      expect(data).toHaveProperty("id", "1")
-
-      // Verify prisma was called correctly
-      expect(prisma.workshopParticipant.create).toHaveBeenCalledWith({
-        data: {
-          userId: mockUserId,
-          workshopId: mockWorkshopId,
-        },
-      })
-    })
-
-    it("returns 401 when not authenticated", async () => {
-      // Mock no session
-      ;(getServerSession as jest.Mock).mockResolvedValue(null)
-
-      // Create request
-      const request = new NextRequest(
-        new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
-        {
-          method: "POST",
-        }
-      )
-
-      // Call the handler with params
-      const response = await POST(request, { params: { id: mockWorkshopId } })
-
-      // Verify the response
-      expect(response.status).toBe(401)
-      const data = await response.json()
-      expect(data).toHaveProperty("error", "Authentication required")
-    })
-
-    it("returns 404 when workshop not found", async () => {
-      const mockSession = {
-        user: {
-          id: mockUserId,
-          name: "Test User",
-          email: "test@example.com",
-        },
+        _count: { participants: 5 },
       }
+      ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue(mockWorkshop)
 
-      // Mock the session
-      ;(getServerSession as jest.Mock).mockResolvedValue(mockSession)
+      // Mock workshop update
+      const mockUpdatedWorkshop = {
+        ...mockWorkshop,
+        host: { id: '1', name: 'Test Host', image: null },
+        participants: [{ id: mockUserId }],
+      }
+      ;(prisma.workshop.update as jest.Mock).mockResolvedValue(mockUpdatedWorkshop)
+
+      // Create request
+      const request = new NextRequest(
+        new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
+        {
+          method: 'POST',
+        }
+      )
+
+      // Call handler
+      const response = await POST(request, { params: { id: mockWorkshopId } })
+      const data = await response.json()
+
+      // Verify response
+      expect(response.status).toBe(200)
+      expect(data).toEqual(mockUpdatedWorkshop)
+
+      // Verify prisma calls
+      expect(prisma.workshop.findUnique).toHaveBeenCalledWith({
+        where: { id: mockWorkshopId },
+        include: { _count: { select: { participants: true } } },
+      })
+      expect(prisma.workshop.update).toHaveBeenCalledWith({
+        where: { id: mockWorkshopId },
+        data: {
+          participants: {
+            connect: { id: mockUserId },
+          },
+        },
+        include: {
+          host: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          participants: {
+            select: {
+              id: true,
+            },
+          },
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+        },
+      })
+    })
+
+    it('returns 401 when not authenticated', async () => {
+      // Mock no authentication
+      (getServerSession as jest.Mock).mockResolvedValue(null)
+
+      // Create request
+      const request = new NextRequest(
+        new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
+        {
+          method: 'POST',
+        }
+      )
+
+      // Call handler
+      const response = await POST(request, { params: { id: mockWorkshopId } })
+
+      // Verify response
+      expect(response.status).toBe(401)
+      expect(await response.json()).toEqual({ error: 'Authentication required' })
+    })
+
+    it('returns 404 when workshop not found', async () => {
+      // Mock authentication
+      (getServerSession as jest.Mock).mockResolvedValue({
+        user: { id: mockUserId },
+      })
 
       // Mock workshop not found
       ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue(null)
@@ -126,160 +163,164 @@ describe("Workshop Participants API", () => {
       const request = new NextRequest(
         new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
         {
-          method: "POST",
+          method: 'POST',
         }
       )
 
-      // Call the handler with params
+      // Call handler
       const response = await POST(request, { params: { id: mockWorkshopId } })
 
-      // Verify the response
+      // Verify response
       expect(response.status).toBe(404)
-      const data = await response.json()
-      expect(data).toHaveProperty("error", "Workshop not found")
+      expect(await response.json()).toEqual({ error: 'Workshop not found' })
     })
 
-    it("returns 400 when workshop is full", async () => {
-      const mockSession = {
-        user: {
-          id: mockUserId,
-          name: "Test User",
-          email: "test@example.com",
-        },
-      }
-
-      // Mock the session
-      ;(getServerSession as jest.Mock).mockResolvedValue(mockSession)
+    it('returns 400 when workshop is full', async () => {
+      // Mock authentication
+      (getServerSession as jest.Mock).mockResolvedValue({
+        user: { id: mockUserId },
+      })
 
       // Mock workshop is full
-      ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue({
+      const mockWorkshop = {
         id: mockWorkshopId,
         maxParticipants: 10,
-        _count: {
-          participants: 10,
-        },
-      })
+        _count: { participants: 10 },
+      }
+      ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue(mockWorkshop)
 
       // Create request
       const request = new NextRequest(
         new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
         {
-          method: "POST",
+          method: 'POST',
         }
       )
 
-      // Call the handler with params
+      // Call handler
       const response = await POST(request, { params: { id: mockWorkshopId } })
 
-      // Verify the response
+      // Verify response
       expect(response.status).toBe(400)
-      const data = await response.json()
-      expect(data).toHaveProperty("error", "Workshop is full")
+      expect(await response.json()).toEqual({ error: 'Workshop is already full' })
     })
   })
 
-  describe("DELETE /api/workshops/[id]/participants", () => {
-    it("removes user from workshop when authenticated", async () => {
-      const mockSession = {
-        user: {
-          id: mockUserId,
-          name: "Test User",
-          email: "test@example.com",
-        },
+  describe('DELETE /api/workshops/[id]/participants', () => {
+    it('removes user from workshop when authenticated', async () => {
+      // Mock authentication
+      (getServerSession as jest.Mock).mockResolvedValue({
+        user: { id: mockUserId },
+      })
+
+      // Mock workshop exists
+      const mockWorkshop = {
+        id: mockWorkshopId,
+        maxParticipants: 10,
+        _count: { participants: 5 },
       }
+      ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue(mockWorkshop)
 
-      // Mock the session
-      ;(getServerSession as jest.Mock).mockResolvedValue(mockSession)
-
-      // Mock participant exists
-      ;(prisma.workshopParticipant.findFirst as jest.Mock).mockResolvedValue({
-        id: "1",
-        userId: mockUserId,
-        workshopId: mockWorkshopId,
-      })
-
-      // Mock participant deletion
-      ;(prisma.workshopParticipant.delete as jest.Mock).mockResolvedValue({
-        id: "1",
-        userId: mockUserId,
-        workshopId: mockWorkshopId,
-      })
+      // Mock workshop update
+      const mockUpdatedWorkshop = {
+        ...mockWorkshop,
+        host: { id: '1', name: 'Test Host', image: null },
+        participants: [],
+      }
+      ;(prisma.workshop.update as jest.Mock).mockResolvedValue(mockUpdatedWorkshop)
 
       // Create request
       const request = new NextRequest(
         new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
         {
-          method: "DELETE",
+          method: 'DELETE',
         }
       )
 
-      // Call the handler with params
+      // Call handler
       const response = await DELETE(request, { params: { id: mockWorkshopId } })
+      const data = await response.json()
 
-      // Verify the response
+      // Verify response
       expect(response.status).toBe(200)
-      const data = await response.json()
-      expect(data).toHaveProperty("id", "1")
+      expect(data).toEqual(mockUpdatedWorkshop)
 
-      // Verify prisma was called correctly
-      expect(prisma.workshopParticipant.delete).toHaveBeenCalledWith({
-        where: {
-          id: "1",
+      // Verify prisma calls
+      expect(prisma.workshop.findUnique).toHaveBeenCalledWith({
+        where: { id: mockWorkshopId },
+      })
+      expect(prisma.workshop.update).toHaveBeenCalledWith({
+        where: { id: mockWorkshopId },
+        data: {
+          participants: {
+            disconnect: { id: mockUserId },
+          },
+        },
+        include: {
+          host: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          participants: {
+            select: {
+              id: true,
+            },
+          },
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
         },
       })
     })
 
-    it("returns 401 when not authenticated", async () => {
-      // Mock no session
-      ;(getServerSession as jest.Mock).mockResolvedValue(null)
+    it('returns 401 when not authenticated', async () => {
+      // Mock no authentication
+      (getServerSession as jest.Mock).mockResolvedValue(null)
 
       // Create request
       const request = new NextRequest(
         new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
         {
-          method: "DELETE",
+          method: 'DELETE',
         }
       )
 
-      // Call the handler with params
+      // Call handler
       const response = await DELETE(request, { params: { id: mockWorkshopId } })
 
-      // Verify the response
+      // Verify response
       expect(response.status).toBe(401)
-      const data = await response.json()
-      expect(data).toHaveProperty("error", "Authentication required")
+      expect(await response.json()).toEqual({ error: 'Authentication required' })
     })
 
-    it("returns 404 when participant not found", async () => {
-      const mockSession = {
-        user: {
-          id: mockUserId,
-          name: "Test User",
-          email: "test@example.com",
-        },
-      }
+    it('returns 404 when workshop not found', async () => {
+      // Mock authentication
+      (getServerSession as jest.Mock).mockResolvedValue({
+        user: { id: mockUserId },
+      })
 
-      // Mock the session
-      ;(getServerSession as jest.Mock).mockResolvedValue(mockSession)
-
-      // Mock participant not found
-      ;(prisma.workshopParticipant.findFirst as jest.Mock).mockResolvedValue(null)
+      // Mock workshop not found
+      ;(prisma.workshop.findUnique as jest.Mock).mockResolvedValue(null)
 
       // Create request
       const request = new NextRequest(
         new URL(`http://localhost:3000/api/workshops/${mockWorkshopId}/participants`),
         {
-          method: "DELETE",
+          method: 'DELETE',
         }
       )
 
-      // Call the handler with params
+      // Call handler
       const response = await DELETE(request, { params: { id: mockWorkshopId } })
 
-      // Verify the response
+      // Verify response
       expect(response.status).toBe(404)
-      const data = await response.json()
-      expect(data).toHaveProperty("error", "Not a participant of this workshop")
+      expect(await response.json()).toEqual({ error: 'Workshop not found' })
     })
   })
 }) 

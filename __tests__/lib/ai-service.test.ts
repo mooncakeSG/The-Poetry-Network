@@ -1,10 +1,34 @@
 import { AIService } from "@/lib/ai/ai-service"
+import { OpenAI } from 'openai'
+import { generatePoemSuggestion } from '@/lib/ai/ai-service'
+
+// Mock OpenAI
+const mockCreate = jest.fn().mockResolvedValue({
+  choices: [
+    {
+      message: {
+        content: 'Test poem suggestion',
+      },
+    },
+  ],
+})
+
+jest.mock('openai', () => ({
+  OpenAI: jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: mockCreate,
+      },
+    },
+  })),
+}))
 
 describe("AI Service", () => {
   let aiService: AIService
 
   beforeEach(() => {
     aiService = new AIService()
+    jest.clearAllMocks()
   })
 
   describe("getWritingSuggestions", () => {
@@ -108,5 +132,23 @@ describe("AI Service", () => {
       expect(analysis).toHaveProperty("rhymeScheme")
       expect(analysis).toHaveProperty("poeticDevices")
     })
+  })
+
+  it('generates a poem suggestion', async () => {
+    const prompt = 'Write a poem about nature'
+    const suggestion = await generatePoemSuggestion(prompt)
+
+    expect(suggestion).toBe('Test poem suggestion')
+    expect(OpenAI).toHaveBeenCalledWith({
+      apiKey: process.env.OPENAI_API_KEY,
+      dangerouslyAllowBrowser: true,
+    })
+  })
+
+  it('handles errors gracefully', async () => {
+    // Mock OpenAI error
+    mockCreate.mockRejectedValueOnce(new Error('API Error'))
+
+    await expect(generatePoemSuggestion('test')).rejects.toThrow('API Error')
   })
 }) 

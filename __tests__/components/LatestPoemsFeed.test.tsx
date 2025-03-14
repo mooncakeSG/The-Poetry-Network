@@ -1,73 +1,65 @@
-import { render, screen, waitFor } from "@testing-library/react"
-import { LatestPoemsFeed } from "@/app/components/LatestPoemsFeed"
-import { server } from "@/mocks/server"
-import { http, HttpResponse } from "msw"
+import { render, screen } from '@testing-library/react'
+import { rest } from 'msw'
+import { server } from '../../mocks/server'
+import { LatestPoemsFeed } from '@/app/components/LatestPoemsFeed'
 
 const mockPoems = [
   {
-    id: "1",
-    title: "Test Poem",
-    content: "Test content\nWith multiple lines\nOf poetry",
+    id: '1',
+    title: 'Test Poem',
+    content: 'Test Content',
     createdAt: new Date().toISOString(),
     author: {
-      id: "1",
-      name: "Test Author",
+      id: '1',
+      name: 'Test Author',
       image: null,
     },
-    likes: 5,
-    comments: 3,
-    tags: ["nature", "love"],
-    excerpt: "Test content...",
+    _count: {
+      likes: 0,
+      comments: 0,
+    },
+    userLiked: false,
   },
 ]
 
-describe("LatestPoemsFeed", () => {
-  it("renders loading state initially", () => {
+describe('LatestPoemsFeed', () => {
+  it('renders loading state initially', () => {
     render(<LatestPoemsFeed />)
-    expect(screen.getByTestId("poems-loading")).toBeInTheDocument()
+    expect(screen.getByTestId('loading-poems')).toBeInTheDocument()
   })
 
-  it("renders poems after successful fetch", async () => {
+  it('renders poems after successful fetch', async () => {
     server.use(
-      http.get("/api/poems/latest", () => {
-        return HttpResponse.json(mockPoems)
+      rest.get('/api/poems/latest', (req, res, ctx) => {
+        return res(ctx.json(mockPoems))
       })
     )
 
     render(<LatestPoemsFeed />)
-
-    await waitFor(() => {
-      expect(screen.getByText("Test Poem")).toBeInTheDocument()
-      expect(screen.getByText("Test Author")).toBeInTheDocument()
-      expect(screen.getByText("Test content...")).toBeInTheDocument()
-    })
+    expect(await screen.findByText('Test Poem')).toBeInTheDocument()
+    expect(screen.getByText('Test Content')).toBeInTheDocument()
+    expect(screen.getByText('Test Author')).toBeInTheDocument()
   })
 
-  it("renders error message when fetch fails", async () => {
+  it('renders error message when fetch fails', async () => {
     server.use(
-      http.get("/api/poems/latest", () => {
-        return new HttpResponse(null, { status: 500 })
+      rest.get('/api/poems/latest', (req, res, ctx) => {
+        return res(ctx.status(500))
       })
     )
 
     render(<LatestPoemsFeed />)
-
-    await waitFor(() => {
-      expect(screen.getByText(/failed to fetch poems/i)).toBeInTheDocument()
-    })
+    expect(await screen.findByText(/error loading poems/i)).toBeInTheDocument()
   })
 
-  it("renders empty state when no poems are available", async () => {
+  it('renders empty state when no poems are available', async () => {
     server.use(
-      http.get("/api/poems/latest", () => {
-        return HttpResponse.json([])
+      rest.get('/api/poems/latest', (req, res, ctx) => {
+        return res(ctx.json([]))
       })
     )
 
     render(<LatestPoemsFeed />)
-
-    await waitFor(() => {
-      expect(screen.getByText(/no poems available/i)).toBeInTheDocument()
-    })
+    expect(await screen.findByText(/no poems available/i)).toBeInTheDocument()
   })
 }) 

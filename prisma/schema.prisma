@@ -164,9 +164,14 @@ model Workshop {
   type           String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  host           User      @relation("WorkshopHost", fields: [hostId], references: [id])
+  host           User      @relation("WorkshopHost", fields: [hostId], references: [id], map: "Workshop_hostId_host_fkey")
   hostId         String
   participants   User[]    @relation("WorkshopParticipants")
+  creator        User      @relation("CreatedWorkshops", fields: [hostId], references: [id], map: "Workshop_hostId_creator_fkey")
+  members        WorkshopMember[]
+  poems          Poem[]
+  drafts         Draft[]
+  notifications  Notification[]
 }
 
 model WorkshopMember {

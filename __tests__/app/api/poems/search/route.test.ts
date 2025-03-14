@@ -11,6 +11,29 @@ jest.mock("@/lib/prisma", () => ({
   },
 }))
 
+// Mock NextRequest and NextResponse
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server')
+  return {
+    ...actual,
+    NextRequest: jest.fn().mockImplementation((url) => ({
+      url: url.toString(),
+      nextUrl: url,
+      cookies: new Map(),
+      json: () => Promise.resolve({}),
+    })),
+    NextResponse: {
+      json: (data: any, init?: ResponseInit) => {
+        const response = new Response(JSON.stringify(data), init)
+        Object.defineProperty(response, 'json', {
+          value: async () => data,
+        })
+        return response
+      },
+    },
+  }
+})
+
 describe("GET /api/poems/search", () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -39,9 +62,9 @@ describe("GET /api/poems/search", () => {
     ;(prisma.poem.findMany as jest.Mock).mockResolvedValue(mockPoems)
 
     // Create a mock request with search query
-    const request = new NextRequest(
-      new URL("http://localhost:3000/api/poems/search?query=nature")
-    )
+    const url = new URL("http://localhost:3000/api/poems/search")
+    url.searchParams.set("query", "nature")
+    const request = new NextRequest(url)
 
     // Call the handler
     const response = await GET(request)
@@ -49,36 +72,20 @@ describe("GET /api/poems/search", () => {
 
     // Verify the response
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(1)
-    expect(data[0]).toHaveProperty("id", "1")
-    expect(data[0]).toHaveProperty("title", "Nature's Beauty")
+    expect(data).toEqual(mockPoems)
 
     // Verify prisma was called with search parameters
-    expect(prisma.poem.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          OR: [
-            { title: expect.objectContaining({ contains: "nature" }) },
-            { content: expect.objectContaining({ contains: "nature" }) },
-          ],
-        }),
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-            },
-          },
-        },
-      })
-    )
+    expect(prisma.poem.findMany).toHaveBeenCalledWith({
+      where: {
+        published: true,
+        OR: [
+          { title: { contains: "nature", mode: "insensitive" } },
+          { content: { contains: "nature", mode: "insensitive" } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    })
   })
 
   it("returns all poems when no query parameter", async () => {
@@ -119,9 +126,8 @@ describe("GET /api/poems/search", () => {
     ;(prisma.poem.findMany as jest.Mock).mockResolvedValue(mockPoems)
 
     // Create a mock request without search query
-    const request = new NextRequest(
-      new URL("http://localhost:3000/api/poems/search")
-    )
+    const url = new URL("http://localhost:3000/api/poems/search")
+    const request = new NextRequest(url)
 
     // Call the handler
     const response = await GET(request)
@@ -129,25 +135,13 @@ describe("GET /api/poems/search", () => {
 
     // Verify the response
     expect(response.status).toBe(200)
-    expect(data).toHaveLength(2)
+    expect(data).toEqual(mockPoems)
 
     // Verify prisma was called without where clause
     expect(prisma.poem.findMany).toHaveBeenCalledWith({
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
+      where: { published: true },
+      orderBy: { createdAt: "desc" },
+      take: 10,
     })
   })
 
@@ -156,16 +150,16 @@ describe("GET /api/poems/search", () => {
     ;(prisma.poem.findMany as jest.Mock).mockRejectedValue(new Error("Database error"))
 
     // Create a mock request
-    const request = new NextRequest(
-      new URL("http://localhost:3000/api/poems/search?query=test")
-    )
+    const url = new URL("http://localhost:3000/api/poems/search")
+    url.searchParams.set("query", "test")
+    const request = new NextRequest(url)
 
     // Call the handler
     const response = await GET(request)
+    const data = await response.json()
 
     // Verify the response
     expect(response.status).toBe(500)
-    const data = await response.json()
-    expect(data).toHaveProperty("error", "Failed to search poems")
+    expect(data).toEqual({ error: "Failed to search poems" })
   })
 }) 

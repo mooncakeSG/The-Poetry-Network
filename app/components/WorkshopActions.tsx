@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 
 interface WorkshopActionsProps {
-  workshopId: string
+  id: string
   isParticipant: boolean
   isFull: boolean
 }
 
 export default function WorkshopActions({
-  workshopId,
+  id,
   isParticipant,
   isFull,
 }: WorkshopActionsProps) {
@@ -23,7 +23,7 @@ export default function WorkshopActions({
   const handleJoinWorkshop = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/workshops/${workshopId}/participants`, {
+      const response = await fetch(`/api/workshops/${id}/participants`, {
         method: "POST",
       })
 
@@ -50,7 +50,7 @@ export default function WorkshopActions({
   const handleLeaveWorkshop = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/workshops/${workshopId}/participants`, {
+      const response = await fetch(`/api/workshops/${id}/participants`, {
         method: "DELETE",
       })
 
@@ -74,21 +74,24 @@ export default function WorkshopActions({
     }
   }
 
-  if (isParticipant) {
-    return (
-      <Button
-        variant="destructive"
-        onClick={handleLeaveWorkshop}
-        disabled={loading}
-      >
-        {loading ? "Leaving..." : "Leave Workshop"}
-      </Button>
-    )
-  }
-
   return (
-    <Button onClick={handleJoinWorkshop} disabled={loading || isFull}>
-      {loading ? "Joining..." : isFull ? "Workshop Full" : "Join Workshop"}
-    </Button>
+    <div>
+      {isParticipant ? (
+        <Button
+          variant="destructive"
+          onClick={handleLeaveWorkshop}
+          disabled={loading}
+        >
+          {loading ? "Leaving..." : "Leave Workshop"}
+        </Button>
+      ) : (
+        <Button
+          onClick={handleJoinWorkshop}
+          disabled={loading || isFull}
+        >
+          {loading ? "Joining..." : isFull ? "Workshop Full" : "Join Workshop"}
+        </Button>
+      )}
+    </div>
   )
 } 

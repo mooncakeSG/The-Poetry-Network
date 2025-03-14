@@ -12,7 +12,36 @@ import {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true,
 });
+
+export async function generatePoemSuggestion(prompt: string): Promise<string> {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are a poetry writing assistant. Generate a poem based on the given prompt."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.8,
+      max_tokens: 1000,
+    });
+
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
 
 export class AIService {
   // Writing Assistant
@@ -35,6 +64,9 @@ export class AIService {
 
     // Process and structure the response
     const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
     return this.processWritingAssistantResponse(response);
   }
 
@@ -55,8 +87,10 @@ export class AIService {
       temperature: 0.8,
       max_tokens: 1000,
     });
-
     const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error('No response received from OpenAI');
+    }
     return this.processGeneratedContent(content, type);
   }
 
@@ -78,7 +112,11 @@ export class AIService {
       max_tokens: 500,
     });
 
-    return this.processSentimentAnalysis(completion.choices[0].message.content);
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return this.processSentimentAnalysis(response);
   }
 
   // Content Categorization
@@ -99,7 +137,11 @@ export class AIService {
       max_tokens: 500,
     });
 
-    return this.processContentCategorization(completion.choices[0].message.content);
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return this.processContentCategorization(response);
   }
 
   // Search Recommendations
@@ -124,7 +166,11 @@ export class AIService {
       max_tokens: 500,
     });
 
-    return this.processSearchRecommendations(completion.choices[0].message.content);
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return this.processSearchRecommendations(response);
   }
 
   // AI Feedback
@@ -145,7 +191,11 @@ export class AIService {
       max_tokens: 1000,
     });
 
-    return this.processAIFeedback(completion.choices[0].message.content);
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return this.processAIFeedback(response);
   }
 
   // Plagiarism Detection
@@ -168,7 +218,11 @@ export class AIService {
       max_tokens: 500,
     });
 
-    return this.processPlagiarismCheck(completion.choices[0].message.content);
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return this.processPlagiarismCheck(response);
   }
 
   // Poetry Analysis
@@ -189,7 +243,11 @@ export class AIService {
       max_tokens: 1000,
     });
 
-    return this.processPoetryAnalysis(completion.choices[0].message.content);
+    const response = completion.choices[0].message.content;
+    if (!response) {
+      throw new Error('No response received from OpenAI');
+    }
+    return this.processPoetryAnalysis(response);
   }
 
   // Helper methods for processing responses

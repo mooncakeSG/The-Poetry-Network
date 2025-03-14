@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -31,24 +32,28 @@ interface Event {
 }
 
 interface ScheduleManagerProps {
-  workshopId: string
+  id: string
   events: Event[]
   onEventAdd: (event: Omit<Event, "id">) => void
   onEventDelete: (eventId: string) => void
 }
 
 export function ScheduleManager({
-  workshopId,
+  id,
   events,
   onEventAdd,
   onEventDelete,
 }: ScheduleManagerProps) {
   const [date, setDate] = useState<Date>()
   const [showAddEvent, setShowAddEvent] = useState(false)
-  const [newEvent, setNewEvent] = useState({
+  const [newEvent, setNewEvent] = useState<{
+    title: string
+    description: string
+    type: Event["type"]
+  }>({
     title: "",
     description: "",
-    type: "meeting" as const,
+    type: "meeting",
   })
 
   const handleAddEvent = () => {

@@ -61,64 +61,70 @@ export default async function WorkshopsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {workshops.map((workshop: Workshop) => (
-          <Link key={workshop.id} href={`/workshops/${workshop.id}`}>
-            <Card className="h-full hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="line-clamp-1">{workshop.title}</CardTitle>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={workshop.host.image || undefined} />
-                        <AvatarFallback>
-                          {workshop.host.name?.[0]?.toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-muted-foreground">
-                        {workshop.host.name}
-                      </span>
+        {workshops.length === 0 ? (
+          <div className="col-span-full text-center text-muted-foreground">
+            No workshops available
+          </div>
+        ) : (
+          workshops.map((workshop: Workshop) => (
+            <Link key={workshop.id} href={`/workshops/${workshop.id}`}>
+              <Card className="h-full hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="line-clamp-1">{workshop.title}</CardTitle>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={workshop.host.image || undefined} />
+                          <AvatarFallback>
+                            {workshop.host.name?.[0]?.toUpperCase() || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-muted-foreground">
+                          {workshop.host.name}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="outline">{workshop.type}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground line-clamp-2 mb-4">
+                    {workshop.description}
+                  </p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium">Date</p>
+                      <p className="text-muted-foreground">
+                        {format(new Date(workshop.date), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Time</p>
+                      <p className="text-muted-foreground">
+                        {workshop.startTime} - {workshop.endTime}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Participants</p>
+                      <p className="text-muted-foreground">
+                        {workshop._count.participants} / {workshop.maxParticipants}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Status</p>
+                      <p className="text-muted-foreground">
+                        {workshop._count.participants >= workshop.maxParticipants
+                          ? "Full"
+                          : "Open"}
+                      </p>
                     </div>
                   </div>
-                  <Badge variant="outline">{workshop.type}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground line-clamp-2 mb-4">
-                  {workshop.description}
-                </p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="font-medium">Date</p>
-                    <p className="text-muted-foreground">
-                      {format(new Date(workshop.date), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Time</p>
-                    <p className="text-muted-foreground">
-                      {workshop.startTime} - {workshop.endTime}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Participants</p>
-                    <p className="text-muted-foreground">
-                      {workshop._count.participants} / {workshop.maxParticipants}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Status</p>
-                    <p className="text-muted-foreground">
-                      {workshop._count.participants >= workshop.maxParticipants
-                        ? "Full"
-                        : "Open"}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   )

@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -35,18 +36,29 @@ interface Workshop {
   startTime: string
   endTime: string
   maxParticipants: number
-  currentParticipants: number
   type: string
   host: {
     id: string
     name: string
     image: string | null
   }
+  _count: {
+    participants: number
+  }
+}
+
+interface DayProps {
+  date: Date
+  selected?: boolean
+  today?: boolean
+  onClick?: () => void
+  children?: React.ReactNode
 }
 
 interface WorkshopCalendarProps {
   workshops: Workshop[]
-  onSchedule?: (workshop: Omit<Workshop, "id" | "currentParticipants" | "host">) => Promise<void>
+  onSchedule?: (workshop: Omit<Workshop, "id" | "host" | "_count">) => Promise<void>
+  currentMonth?: Date
 }
 
 const WORKSHOP_TYPES = [
@@ -58,8 +70,9 @@ const WORKSHOP_TYPES = [
   "Collaborative Writing",
 ] as const
 
-export function WorkshopCalendar({ workshops, onSchedule }: WorkshopCalendarProps) {
+export function WorkshopCalendar({ workshops, onSchedule, currentMonth = new Date() }: WorkshopCalendarProps) {
   const [date, setDate] = useState<Date>()
+  const [month, setMonth] = useState<Date>(currentMonth)
   const [showScheduleDialog, setShowScheduleDialog] = useState(false)
   const [newWorkshop, setNewWorkshop] = useState({
     title: "",
@@ -71,7 +84,7 @@ export function WorkshopCalendar({ workshops, onSchedule }: WorkshopCalendarProp
   })
   const { toast } = useToast()
 
-  const monthStart = startOfMonth(date || new Date())
+  const monthStart = startOfMonth(month)
   const monthEnd = endOfMonth(monthStart)
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
@@ -118,185 +131,141 @@ export function WorkshopCalendar({ workshops, onSchedule }: WorkshopCalendarProp
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Schedule a Workshop</DialogTitle>
+              <DialogTitle>Schedule Workshop</DialogTitle>
               <DialogDescription>
                 Fill in the details to schedule a new workshop.
               </DialogDescription>
             </DialogHeader>
-
-            <form onSubmit={handleSchedule} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={newWorkshop.title}
-                  onChange={(e) =>
-                    setNewWorkshop((prev) => ({ ...prev, title: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newWorkshop.description}
-                  onChange={(e) =>
-                    setNewWorkshop((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time</Label>
+            <form onSubmit={handleSchedule} data-testid="schedule-form">
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Title</Label>
                   <Input
-                    id="startTime"
-                    type="time"
-                    value={newWorkshop.startTime}
+                    id="title"
+                    value={newWorkshop.title}
                     onChange={(e) =>
-                      setNewWorkshop((prev) => ({
-                        ...prev,
-                        startTime: e.target.value,
-                      }))
+                      setNewWorkshop({ ...newWorkshop, title: e.target.value })
                     }
-                    required
+                    placeholder="Workshop title"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    value={newWorkshop.endTime}
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={newWorkshop.description}
                     onChange={(e) =>
-                      setNewWorkshop((prev) => ({
-                        ...prev,
-                        endTime: e.target.value,
-                      }))
+                      setNewWorkshop({ ...newWorkshop, description: e.target.value })
                     }
-                    required
+                    placeholder="Workshop description"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Select
+                    value={newWorkshop.type}
+                    onValueChange={(value) =>
+                      setNewWorkshop({ ...newWorkshop, type: value })
+                    }
+                  >
+                    <SelectTrigger id="type">
+                      <SelectValue placeholder="Select workshop type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WORKSHOP_TYPES.map((type) => (
+                        <SelectItem key={type} value={type.toLowerCase()}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="start-time">Start Time</Label>
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={newWorkshop.startTime}
+                      onChange={(e) =>
+                        setNewWorkshop({ ...newWorkshop, startTime: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="end-time">End Time</Label>
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={newWorkshop.endTime}
+                      onChange={(e) =>
+                        setNewWorkshop({ ...newWorkshop, endTime: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="max-participants">Maximum Participants</Label>
+                  <Input
+                    id="max-participants"
+                    type="number"
+                    value={newWorkshop.maxParticipants}
+                    onChange={(e) =>
+                      setNewWorkshop({
+                        ...newWorkshop,
+                        maxParticipants: parseInt(e.target.value),
+                      })
+                    }
+                    min={2}
+                    max={100}
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="maxParticipants">Max Participants</Label>
-                <Input
-                  id="maxParticipants"
-                  type="number"
-                  min="1"
-                  value={newWorkshop.maxParticipants}
-                  onChange={(e) =>
-                    setNewWorkshop((prev) => ({
-                      ...prev,
-                      maxParticipants: parseInt(e.target.value),
-                    }))
-                  }
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">Workshop Type</Label>
-                <Select
-                  value={newWorkshop.type}
-                  onValueChange={(value) =>
-                    setNewWorkshop((prev) => ({ ...prev, type: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORKSHOP_TYPES.map((type) => (
-                      <SelectItem key={type} value={type.toLowerCase()}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button type="submit" className="w-full">
-                Schedule Workshop
-              </Button>
+              <DialogFooter>
+                <Button type="submit">Schedule</Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
-
-      <Calendar
-        mode="single"
-        selected={date}
-        onSelect={setDate}
-        className="rounded-md border"
-        components={{
-          Day: ({ date: dayDate, ...props }) => {
-            const dateStr = format(dayDate, "yyyy-MM-dd")
-            const dayWorkshops = workshopsByDate[dateStr] || []
-
-            return (
-              <div
-                className={cn(
-                  "relative h-14 w-14 p-0",
-                  dayWorkshops.length > 0 &&
-                    "bg-primary/5 font-medium text-primary"
-                )}
-                {...props}
-              >
-                <time dateTime={dateStr} className="absolute right-1 top-1">
-                  {format(dayDate, "d")}
-                </time>
-                {dayWorkshops.length > 0 && (
-                  <div className="absolute bottom-1 left-1">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                  </div>
-                )}
-              </div>
-            )
-          },
-        }}
-      />
-
-      {date && workshopsByDate[format(date, "yyyy-MM-dd")]?.length > 0 && (
-        <div className="mt-4 space-y-4">
-          <h3 className="font-medium">
-            Workshops on {format(date, "MMMM d, yyyy")}
-          </h3>
-          <div className="space-y-2">
-            {workshopsByDate[format(date, "yyyy-MM-dd")].map((workshop) => (
-              <div
-                key={workshop.id}
-                className="rounded-lg border p-4 hover:bg-accent"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{workshop.title}</h4>
-                  <span className="text-sm text-muted-foreground">
-                    {workshop.startTime} - {workshop.endTime}
-                  </span>
+      <div className="rdp p-3 rounded-md border">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={setDate}
+          month={month}
+          onMonthChange={setMonth}
+          className="w-full"
+          components={{
+            Day: ({ date, selected, today, onClick }: DayProps) => {
+              const dateStr = format(date, "yyyy-MM-dd")
+              const dayWorkshops = workshopsByDate[dateStr] || []
+              return (
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full h-full p-2 text-center rounded-md",
+                      selected && "bg-primary text-primary-foreground",
+                      !selected && today && "bg-accent text-accent-foreground",
+                      !selected && !today && "hover:bg-accent",
+                      dayWorkshops.length > 0 && "font-bold"
+                    )}
+                    onClick={onClick}
+                  >
+                    {format(date, "d")}
+                    {dayWorkshops.length > 0 && (
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                        <div className="w-1 h-1 bg-primary rounded-full" />
+                      </div>
+                    )}
+                  </button>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {workshop.description}
-                </p>
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span>
-                    {workshop.currentParticipants}/{workshop.maxParticipants}{" "}
-                    participants
-                  </span>
-                  <span className="capitalize">{workshop.type}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              )
+            },
+          }}
+        />
+      </div>
     </div>
   )
 } 

@@ -85,24 +85,15 @@ describe("WorkshopsPage", () => {
   })
 
   it("displays schedule button when authenticated", async () => {
-    const mockSession = {
-      user: {
-        id: "1",
-        name: "Test User",
-        email: "test@example.com",
-      },
-    }
+    // Mock authenticated session
+    (getServerSession as jest.Mock).mockResolvedValue({
+      user: { id: '1', name: 'Test User' },
+    })
 
-    // Mock the session
-    ;(getServerSession as jest.Mock).mockResolvedValue(mockSession)
-
-    // Mock empty workshop list
-    ;(prisma.workshop.findMany as jest.Mock).mockResolvedValue([])
-
-    render(await WorkshopsPage())
+    render(<WorkshopsPage />)
 
     // Verify schedule button is present
-    expect(screen.getByRole("link", { name: /schedule workshop/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /host workshop/i })).toBeInTheDocument()
   })
 
   it("hides schedule button when not authenticated", async () => {
@@ -119,18 +110,24 @@ describe("WorkshopsPage", () => {
   })
 
   it("displays workshop details", async () => {
+    // Mock authenticated session
+    (getServerSession as jest.Mock).mockResolvedValue({
+      user: { id: '1', name: 'Test User' },
+    })
+
+    // Mock workshop data
     const mockWorkshop = {
-      id: "1",
-      title: "Poetry Writing Workshop",
-      description: "Learn to write poetry",
-      date: new Date("2024-03-20"),
-      startTime: "10:00",
-      endTime: "11:00",
+      id: '1',
+      title: 'Poetry Writing Workshop',
+      description: 'Learn to write poetry',
+      date: new Date('2024-03-20'),
+      startTime: '10:00',
+      endTime: '11:00',
       maxParticipants: 10,
-      type: "Poetry Writing",
+      type: 'Poetry Writing',
       host: {
-        id: "1",
-        name: "Test Host",
+        id: '1',
+        name: 'Test Host',
         image: null,
       },
       _count: {
@@ -138,18 +135,19 @@ describe("WorkshopsPage", () => {
       },
     }
 
-    // Mock the prisma query
     ;(prisma.workshop.findMany as jest.Mock).mockResolvedValue([mockWorkshop])
 
-    render(await WorkshopsPage())
+    render(<WorkshopsPage />)
 
     // Verify workshop details are displayed
-    expect(screen.getByText("Poetry Writing Workshop")).toBeInTheDocument()
-    expect(screen.getByText("Learn to write poetry")).toBeInTheDocument()
-    expect(screen.getByText("Test Host")).toBeInTheDocument()
-    expect(screen.getByText("5/10")).toBeInTheDocument()
-    expect(screen.getByText("10:00 - 11:00")).toBeInTheDocument()
-    expect(screen.getByText("Poetry Writing")).toBeInTheDocument()
+    expect(screen.getByText('Poetry Writing Workshop')).toBeInTheDocument()
+    expect(screen.getByText('Learn to write poetry')).toBeInTheDocument()
+    expect(screen.getByText('Test Host')).toBeInTheDocument()
+    expect(screen.getByText('5')).toBeInTheDocument()
+    expect(screen.getByText('/')).toBeInTheDocument()
+    expect(screen.getByText('10')).toBeInTheDocument()
+    expect(screen.getByText('10:00 - 11:00')).toBeInTheDocument()
+    expect(screen.getByText('Poetry Writing')).toBeInTheDocument()
   })
 
   it("verifies prisma query parameters", async () => {
