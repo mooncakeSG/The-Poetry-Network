@@ -1,161 +1,128 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { PoemCard } from "@/components/poem-card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
-import { type PoemCardData } from "@/types"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Heart, MessageSquare } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { format } from "date-fns"
+import { useState } from "react"
+import { Heart, MessageCircle, Share2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-interface ApiPoemData {
+interface Poem {
   id: string
   title: string
   content: string
-  createdAt: string
-  userLiked: boolean
   author: {
-    id: string
     name: string
     image: string | null
   }
-  _count: {
-    likes: number
-    comments: number
-  }
+  likes: number
+  comments: number
+  isLiked: boolean
 }
 
-export function LatestPoemsFeed() {
-  const [poems, setPoems] = useState<PoemCardData[]>([])
-  const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
-  const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
+interface LatestPoemsFeedProps {
+  type: "trending" | "latest"
+}
 
-  useEffect(() => {
-    async function fetchLatestPoems() {
-      try {
-        const response = await fetch("/api/poems/latest")
-        if (!response.ok) {
-          throw new Error("Failed to fetch latest poems")
-        }
-        const data: ApiPoemData[] = await response.json()
-        
-        // Transform API data to match PoemCardData interface
-        const transformedPoems: PoemCardData[] = data.map(poem => ({
-          ...poem,
-          excerpt: poem.content
-            .split("\n\n")
-            .slice(0, 3)
-            .join("\n\n")
-            .slice(0, 300),
-          likes: poem._count.likes,
-          comments: poem._count.comments,
-          tags: []
-        }))
-
-        setPoems(transformedPoems)
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load latest poems. Please try again later.",
-          variant: "destructive",
-        })
-        setError("Failed to load latest poems. Please try again later.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchLatestPoems()
-  }, [toast])
-
-  if (loading) {
-    return (
-      <div className="space-y-4" data-testid="loading-poems">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="animate-pulse bg-muted h-[200px] w-full rounded-lg"
-          />
-        ))}
-      </div>
-    )
+const mockPoems: Poem[] = [
+  {
+    id: "1",
+    title: "Autumn Leaves",
+    content: "Crimson and gold dance in the breeze,\nNature's confetti in the autumn trees.\nWhispering secrets as they fall,\nPainting memories of summer's last call.",
+    author: {
+      name: "Michael Brown",
+      image: null
+    },
+    likes: 156,
+    comments: 23,
+    isLiked: false
+  },
+  {
+    id: "2",
+    title: "City Lights",
+    content: "Neon dreams in concrete streams,\nUrban stars that never sleep.\nFootsteps echo through the night,\nStories untold in electric light.",
+    author: {
+      name: "Lisa Chen",
+      image: null
+    },
+    likes: 89,
+    comments: 12,
+    isLiked: false
+  },
+  {
+    id: "3",
+    title: "Ocean's Song",
+    content: "Waves crash upon the ancient shore,\nTelling tales of what came before.\nSalt and spray and seabird's cry,\nNature's rhythm, low and high.",
+    author: {
+      name: "David Miller",
+      image: null
+    },
+    likes: 234,
+    comments: 45,
+    isLiked: false
   }
+]
 
-  if (error) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Error loading poems. Please try again later.
-      </div>
-    )
-  }
+export function LatestPoemsFeed({ type }: LatestPoemsFeedProps) {
+  const [poems, setPoems] = useState(mockPoems)
 
-  if (!poems?.length) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No poems available.
-      </div>
+  const handleLike = (id: string) => {
+    setPoems((prev) =>
+      prev.map((poem) =>
+        poem.id === id
+          ? {
+              ...poem,
+              likes: poem.isLiked ? poem.likes - 1 : poem.likes + 1,
+              isLiked: !poem.isLiked,
+            }
+          : poem
+      )
     )
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4">
       {poems.map((poem) => (
-        <div
-          key={poem.id}
-          className="block rounded-lg border bg-card p-6 text-card-foreground shadow-sm transition-shadow hover:shadow-lg"
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Avatar>
-                  <AvatarImage src={poem.author.image || undefined} />
-                  <AvatarFallback>
-                    {poem.author.name?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <span
-                    className="font-medium hover:underline"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      router.push(`/profile/${poem.author.id}`)
-                    }}
-                  >
-                    {poem.author.name}
-                  </span>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(poem.createdAt), "MMM d, yyyy")}
-                  </p>
-                </div>
+        <Card key={poem.id}>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Avatar>
+                <AvatarImage src={poem.author.image || undefined} />
+                <AvatarFallback>{poem.author.name[0]}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{poem.author.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {type === "trending" ? "Trending" : "New"}
+                </p>
               </div>
-              <Badge variant="secondary">{poem.type}</Badge>
             </div>
-            <div
-              className="cursor-pointer"
-              onClick={() => router.push(`/poems/${poem.id}`)}
-            >
-              <h3 className="font-semibold hover:underline">{poem.title}</h3>
-              <p className="mt-2 text-muted-foreground line-clamp-3">
-                {poem.content}
-              </p>
-            </div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <div className="flex items-center">
+            <h3 className="text-xl font-semibold mb-2">{poem.title}</h3>
+            <p className="whitespace-pre-line text-muted-foreground">
+              {poem.content}
+            </p>
+          </CardContent>
+          <CardFooter>
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleLike(poem.id)}
+                className={poem.isLiked ? "text-red-500" : ""}
+              >
                 <Heart className="mr-1 h-4 w-4" />
-                {poem._count.likes} likes
-              </div>
-              <div className="flex items-center">
-                <MessageSquare className="mr-1 h-4 w-4" />
-                {poem._count.comments} comments
-              </div>
+                {poem.likes}
+              </Button>
+              <Button variant="ghost" size="sm">
+                <MessageCircle className="mr-1 h-4 w-4" />
+                {poem.comments}
+              </Button>
+              <Button variant="ghost" size="sm">
+                <Share2 className="mr-1 h-4 w-4" />
+                Share
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
       ))}
     </div>
   )

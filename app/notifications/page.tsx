@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, Users, Star } from "lucide-react"
 
 interface Notification {
   id: string
@@ -92,13 +93,31 @@ export default function NotificationsPage() {
     }
   }
 
+  const getNotificationIcon = (type: Notification["type"]) => {
+    switch (type) {
+      case "like":
+        return <Heart className="h-4 w-4" />
+      case "comment":
+        return <MessageCircle className="h-4 w-4" />
+      case "follow":
+        return <Users className="h-4 w-4" />
+      case "feature":
+        return <Star className="h-4 w-4" />
+    }
+  }
+
   if (!session?.user) {
     return null
   }
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Notifications</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Notifications</h1>
+        <Button variant="ghost" size="sm">
+          Mark all as read
+        </Button>
+      </div>
 
       {loading ? (
         <div className="space-y-4">
@@ -122,44 +141,49 @@ export default function NotificationsPage() {
         <>
           <div className="space-y-4">
             {notifications?.notifications.map((notification) => (
-              <Card key={notification.id} className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <Avatar>
-                      <AvatarImage src={notification.user.image || undefined} />
-                      <AvatarFallback>
-                        {notification.user.name?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm">
-                        <span className="font-semibold">{notification.user.name}</span>{' '}
-                        {notification.message}
-                        {notification.poem && (
-                          <span className="font-medium text-primary">
-                            {' '}
-                            "{notification.poem.title}"
-                          </span>
-                        )}
-                        {notification.workshop && (
-                          <span className="font-medium text-primary">
-                            {' '}
-                            "{notification.workshop.name}"
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(notification.createdAt).toLocaleString()}
-                      </p>
+              <Card
+                key={notification.id}
+                className={`p-4 ${
+                  !notification.read ? "bg-accent" : ""
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <Avatar>
+                    <AvatarImage src={notification.user.image || undefined} />
+                    <AvatarFallback>
+                      {notification.user.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-1">
+                        {getNotificationIcon(notification.type as Notification["type"])}
+                      </div>
+                      <div>
+                        <p>
+                          <span className="font-semibold">
+                            {notification.user.name}
+                          </span>{" "}
+                          {notification.message}
+                          {notification.poem && (
+                            <span className="font-medium text-primary">
+                              {' '}
+                              "{notification.poem.title}"
+                            </span>
+                          )}
+                          {notification.workshop && (
+                            <span className="font-medium text-primary">
+                              {' '}
+                              "{notification.workshop.name}"
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(notification.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               </Card>
             ))}

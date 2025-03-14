@@ -1,104 +1,84 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
-import { toast } from 'sonner'
-import Link from 'next/link'
+import { Card } from "@/components/ui/card"
+import { Heart, MessageCircle, PenSquare, Users } from "lucide-react"
 
 interface Activity {
-  id: string
-  type: 'poem' | 'draft' | 'workshop' | 'comment' | 'like' | 'follow'
-  title: string
-  description: string
-  createdAt: string
-  targetId: string
-  targetType: string
+  id: number
+  type: "like" | "comment" | "publish" | "follow"
+  content: string
+  timestamp: string
 }
 
 interface ActivityListProps {
   userId: string
 }
 
+// Mock data - replace with actual data from your backend
+const activities: Activity[] = [
+  {
+    id: 1,
+    type: "publish",
+    content: "Published a new poem: 'Whispers in the Wind'",
+    timestamp: "2024-03-18T14:30:00Z",
+  },
+  {
+    id: 2,
+    type: "like",
+    content: "Liked 'Morning Light' by Sarah Chen",
+    timestamp: "2024-03-18T12:15:00Z",
+  },
+  {
+    id: 3,
+    type: "comment",
+    content: "Commented on 'The Journey' by Michael Rivera",
+    timestamp: "2024-03-17T18:45:00Z",
+  },
+  {
+    id: 4,
+    type: "follow",
+    content: "Started following Emily Johnson",
+    timestamp: "2024-03-17T10:20:00Z",
+  },
+]
+
 export function ActivityList({ userId }: ActivityListProps) {
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const response = await fetch(`/api/users/${userId}/activity`)
-        if (response.ok) {
-          const data = await response.json()
-          setActivities(data)
-        } else {
-          toast.error('Failed to load activity')
-        }
-      } catch (error) {
-        console.error('Error fetching activity:', error)
-        toast.error('Failed to load activity')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchActivities()
-  }, [userId])
-
-  if (loading) {
-    return <div className="text-center">Loading activity...</div>
-  }
-
-  if (activities.length === 0) {
-    return (
-      <div className="text-center space-y-4">
-        <p className="text-gray-600">No activity yet</p>
-      </div>
-    )
-  }
-
-  const getActivityIcon = (type: Activity['type']) => {
+  const getActivityIcon = (type: Activity["type"]) => {
     switch (type) {
-      case 'poem':
-        return '📝'
-      case 'draft':
-        return '📄'
-      case 'workshop':
-        return '👥'
-      case 'comment':
-        return '💬'
-      case 'like':
-        return '❤️'
-      case 'follow':
-        return '👤'
-      default:
-        return '📌'
+      case "like":
+        return <Heart className="h-4 w-4" />
+      case "comment":
+        return <MessageCircle className="h-4 w-4" />
+      case "publish":
+        return <PenSquare className="h-4 w-4" />
+      case "follow":
+        return <Users className="h-4 w-4" />
     }
   }
 
   return (
-    <div className="space-y-6">
-      {activities.map((activity) => (
-        <Card key={activity.id} className="p-6">
-          <div className="flex items-start space-x-4">
-            <div className="text-2xl">{getActivityIcon(activity.type)}</div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{activity.title}</h3>
-                <span className="text-sm text-gray-500">
-                  {new Date(activity.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <p className="mt-2 text-gray-600">{activity.description}</p>
-              <Link
-                href={`/${activity.targetType}s/${activity.targetId}`}
-                className="mt-4 inline-block text-sm text-blue-600 hover:underline"
-              >
-                View {activity.targetType}
-              </Link>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {activities.length === 0 ? (
+        <Card className="p-6 text-center">
+          <p className="text-muted-foreground">No recent activity</p>
         </Card>
-      ))}
+      ) : (
+        activities.map((activity) => (
+          <Card key={activity.id} className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-1">
+                {getActivityIcon(activity.type)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm">{activity.content}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(activity.timestamp).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ))
+      )}
     </div>
   )
 } 
