@@ -9,7 +9,9 @@
     "lint": "next lint",
     "prisma:seed": "ts-node prisma/seed.ts",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "db:setup": "node scripts/setup-db.js",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@auth/nextjs": "^0.0.0-380f8d56",
@@ -54,9 +56,11 @@
     "framer-motion": "^12.5.0",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
+    "mysql2": "^3.13.0",
     "next": "15.1.0",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.4",
+    "openai": "^4.28.0",
     "prisma": "^6.5.0",
     "react": "^19",
     "react-day-picker": "8.10.1",
@@ -68,8 +72,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
-    "zod": "^3.24.1",
-    "openai": "^4.28.0"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

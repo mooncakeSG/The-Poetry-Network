@@ -1,6 +1,51 @@
 # Poetry Network
 
-A modern web application for poets and writers to share, collaborate, and improve their craft.
+A modern web application for poets and writers to create, share, and collaborate on poetry.
+
+## Database Setup
+
+### Prerequisites
+- MySQL Server installed and running
+- Node.js and npm installed
+- Git installed
+
+### Configuration
+1. Create a MySQL user and set up credentials:
+   ```sql
+   CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
+   GRANT ALL PRIVILEGES ON poetry_network.* TO 'user'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+2. Update the `.env.local` file with your MySQL credentials:
+   ```
+   DATABASE_URL="mysql://user:password@localhost:3306/poetry_network"
+   ```
+
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Set up the database:
+   ```bash
+   npm run db:setup
+   ```
+
+5. Run database migrations:
+   ```bash
+   npm run db:migrate
+   ```
+
+### Database Structure
+The application uses Prisma ORM with the following main models:
+- Users
+- Poems
+- Workshops
+- Comments
+- Privacy Settings
+
+For detailed schema information, see `prisma/schema.prisma`.
 
 ## Features
 
