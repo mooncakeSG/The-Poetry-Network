@@ -16,6 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { PoemCard } from "@/components/poem-card"
+import { LatestPoemsFeed } from "./components/LatestPoemsFeed"
 
 interface Poem {
   id: string
@@ -36,66 +37,64 @@ interface Poem {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <h1 className="text-4xl font-bold mb-8">Welcome to Poetry Network</h1>
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-8 lg:p-24">
+      <div className="z-10 w-full max-w-5xl space-y-8">
+        <div className="text-center md:text-left">
+          <h1 className="text-3xl md:text-4xl font-bold">Welcome to Poetry Network</h1>
         </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-3 lg:text-left">
-        <Link
-          href="/write"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Write Poetry{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              →
-            </span>
-              </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Share your poetic creations with the world.
-          </p>
-        </Link>
+        <div className="grid gap-4 text-center sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/write"
+            className="group rounded-lg border border-transparent p-4 transition-colors hover:border-gray-300 hover:bg-gray-100"
+          >
+            <h2 className="mb-2 text-xl md:text-2xl font-semibold">
+              Write Poetry{' '}
+              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                →
+              </span>
+            </h2>
+            <p className="text-sm opacity-70">
+              Share your poetic creations with the world.
+            </p>
+          </Link>
 
-        <Link
-          href="/workshops"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Join Workshops{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              →
-            </span>
-              </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Collaborate and learn with other poets.
-              </p>
-                </Link>
+          <Link
+            href="/workshops"
+            className="group rounded-lg border border-transparent p-4 transition-colors hover:border-gray-300 hover:bg-gray-100"
+          >
+            <h2 className="mb-2 text-xl md:text-2xl font-semibold">
+              Join Workshops{' '}
+              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                →
+              </span>
+            </h2>
+            <p className="text-sm opacity-70">
+              Collaborate and learn with other poets.
+            </p>
+          </Link>
 
-        <Link
-          href="/search"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Discover{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              →
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore poetry from around the world.
-          </p>
-              </Link>
-            </div>
-
-      <div className="relative flex place-items-center">
-        <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0">
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Latest Poems</h2>
-            {/* Feed component will be added here */}
-          </div>
+          <Link
+            href="/search"
+            className="group rounded-lg border border-transparent p-4 transition-colors hover:border-gray-300 hover:bg-gray-100"
+          >
+            <h2 className="mb-2 text-xl md:text-2xl font-semibold">
+              Discover{' '}
+              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                →
+              </span>
+            </h2>
+            <p className="text-sm opacity-70">
+              Explore poetry from around the world.
+            </p>
+          </Link>
         </div>
-    </div>
+
+        <div className="w-full">
+          <h2 className="mb-4 text-2xl font-semibold">Latest Poems</h2>
+          <LatestPoemsFeed />
+        </div>
+      </div>
     </main>
   )
 }

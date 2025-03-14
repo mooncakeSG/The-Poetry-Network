@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import * as z from "zod"
+import { NextRequest } from "next/server"
 
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -18,54 +19,47 @@ const workshopCreateSchema = z.object({
   maxMembers: z.number().min(2).max(100).default(20),
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Authentication required" },
         { status: 401 }
       )
     }
 
     const body = await request.json()
-    const { title, description } = body
-
-    if (!title || !description) {
-      return NextResponse.json(
-        { error: "Title and description are required" },
-        { status: 400 }
-      )
-    }
+    const { title, description, date, startTime, endTime, maxParticipants, type } =
+      body
 
     const workshop = await prisma.workshop.create({
       data: {
         title,
         description,
-        creatorId: session.user.id,
-        members: {
-          connect: { id: session.user.id },
-        },
+        date: new Date(date),
+        startTime,
+        endTime,
+        maxParticipants,
+        type,
+        hostId: session.user.id,
       },
       include: {
-        creator: {
+        host: {
           select: {
             id: true,
             name: true,
             image: true,
           },
         },
-        members: {
+        participants: {
           select: {
             id: true,
-            name: true,
-            image: true,
           },
         },
         _count: {
           select: {
-            members: true,
-            poems: true,
+            participants: true,
           },
         },
       },
@@ -73,86 +67,64 @@ export async function POST(request: Request) {
 
     return NextResponse.json(workshop)
   } catch (error) {
-    console.error("Create Workshop API Error:", error)
+    console.error("Error creating workshop:", error)
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to create workshop" },
       { status: 500 }
     )
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "10")
-    const skip = (page - 1) * limit
-    const query = searchParams.get("q") || ""
+    const searchParams = request.nextUrl.searchParams
+    const startDate = searchParams.get("start")
+    const endDate = searchParams.get("end")
+    const type = searchParams.get("type")
 
-    const [workshops, total] = await Promise.all([
-      prisma.workshop.findMany({
-        where: {
-          OR: [
-            { title: { contains: query } },
-            { description: { contains: query } },
-          ],
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          creator: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
+    const where = {
+      ...(startDate && endDate
+        ? {
+            date: {
+              gte: new Date(startDate),
+              lte: new Date(endDate),
             },
-          },
-          members: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-          _count: {
-            select: {
-              members: true,
-              poems: true,
-            },
-          },
-          ...(session?.user && {
-            members: {
-              where: { id: session.user.id },
-              select: { id: true },
-            },
-          }),
-        },
-      }),
-      prisma.workshop.count({
-        where: {
-          OR: [
-            { title: { contains: query } },
-            { description: { contains: query } },
-          ],
-        },
-      }),
-    ])
+          }
+        : {}),
+      ...(type ? { type: { equals: type, mode: "insensitive" } } : {}),
+    }
 
-    return NextResponse.json({
-      workshops: workshops.map((workshop) => ({
-        ...workshop,
-        isMember: workshop.members.length > 0,
-      })),
-      total,
-      pages: Math.ceil(total / limit),
-      currentPage: page,
+    const workshops = await prisma.workshop.findMany({
+      where,
+      include: {
+        host: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        participants: {
+          select: {
+            id: true,
+          },
+        },
+        _count: {
+          select: {
+            participants: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "asc",
+      },
     })
+
+    return NextResponse.json(workshops)
   } catch (error) {
-    console.error("Get Workshops API Error:", error)
+    console.error("Error fetching workshops:", error)
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to fetch workshops" },
       { status: 500 }
     )
   }

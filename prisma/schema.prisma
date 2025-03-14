@@ -72,6 +72,8 @@ model User {
   feedback      Feedback[]
   notifications Notification[]
   notificationsFrom Notification[] @relation("NotificationFrom")
+  hostedWorkshops    Workshop[] @relation("WorkshopHost")
+  joinedWorkshops    Workshop[] @relation("WorkshopParticipants")
 }
 
 model VerificationToken {
@@ -152,21 +154,19 @@ model Follow {
 }
 
 model Workshop {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  isPrivate   Boolean  @default(false)
-  maxMembers  Int      @default(20)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  creatorId   String
-  creator     User     @relation("CreatedWorkshops", fields: [creatorId], references: [id])
-  members     WorkshopMember[]
-  poems       Poem[]
-  drafts      Draft[]
-  notifications Notification[]
-
-  @@index([creatorId])
+  id              String    @id @default(cuid())
+  title           String
+  description     String
+  date           DateTime
+  startTime      String
+  endTime        String
+  maxParticipants Int      @default(20)
+  type           String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  host           User      @relation("WorkshopHost", fields: [hostId], references: [id])
+  hostId         String
+  participants   User[]    @relation("WorkshopParticipants")
 }
 
 model WorkshopMember {

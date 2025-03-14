@@ -1,5 +1,125 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Search, Filter } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { Skeleton } from "@/components/ui/skeleton"
+import { PoemCard } from "@/components/poem-card"
+import { type PoemCardData } from "@/types"
+
+const THEMES = [
+  "Love",
+  "Nature",
+  "Life",
+  "Death",
+  "Hope",
+  "Sadness",
+  "Joy",
+  "Spirituality",
+  "Philosophy",
+  "Social Justice",
+] as const
+
+const FORMS = [
+  "Free Verse",
+  "Sonnet",
+  "Haiku",
+  "Limerick",
+  "Villanelle",
+  "Tanka",
+  "Ode",
+  "Ballad",
+  "Ghazal",
+  "Prose Poetry",
+] as const
+
+const SORT_OPTIONS = [
+  { label: "Most Recent", value: "recent" },
+  { label: "Most Liked", value: "likes" },
+  { label: "Most Commented", value: "comments" },
+] as const
+
+interface SearchFilters {
+  query: string
+  theme: string
+  form: string
+  sortBy: string
+  minLength: string
+  maxLength: string
+}
+
+export default function SearchPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [loading, setLoading] = useState(false)
+  const [poems, setPoems] = useState<PoemCardData[]>([])
+  const [filters, setFilters] = useState<SearchFilters>({
+    query: searchParams.get("q") || "",
+    theme: searchParams.get("theme") || "",
+    form: searchParams.get("form") || "",
+    sortBy: searchParams.get("sort") || "recent",
+    minLength: searchParams.get("min") || "",
+    maxLength: searchParams.get("max") || "",
+  })
+
+  async function handleSearch(e?: React.FormEvent) {
+    e?.preventDefault()
+    setLoading(true)
+
+    const params = new URLSearchParams()
+    if (filters.query) params.set("q", filters.query)
+    if (filters.theme) params.set("theme", filters.theme)
+    if (filters.form) params.set("form", filters.form)
+    if (filters.sortBy) params.set("sort", filters.sortBy)
+    if (filters.minLength) params.set("min", filters.minLength)
+    if (filters.maxLength) params.set("max", filters.maxLength)
+
+    try {
+      const response = await fetch(`/api/poems/search?${params.toString()}`)
+      if (!response.ok) throw new Error("Search failed")
+      const data = await response.json()
+
+      // Transform API data to match PoemCardData interface
+      const transformedPoems: PoemCardData[] = data.map((poem: any) => ({
+        ...poem,
+        excerpt: poem.content
+          .split("\n\n")
+          .slice(0, 3)
+          .join("\n\n")
+          .slice(0, 300),
+        likes: poem._count.likes,
+        comments: poem._count.comments,
+        tags: poem.tags || [],
+      }))
+
+      setPoems(transformedPoems)
+      router.push(`/search?${params.toString()}`)
+    } catch (error) {
+      console.error("Search error:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'

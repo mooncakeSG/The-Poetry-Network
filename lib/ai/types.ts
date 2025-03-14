@@ -67,4 +67,28 @@ export interface PlagiarismCheckResult {
     similarity: number;
     matchedText: string;
   }[];
+}
+
+export interface PoetryAnalysis {
+  meter: {
+    pattern: string;
+    type: string;
+    analysis: string;
+  };
+  rhymeScheme: {
+    pattern: string;
+    type: string;
+    analysis: string;
+  };
+  form: {
+    type: string;
+    characteristics: string[];
+    adherence: number;
+  };
+  devices: Array<{
+    name: string;
+    description: string;
+  }>;
+  technicalScore: number;
+  suggestions: string[];
 } 
