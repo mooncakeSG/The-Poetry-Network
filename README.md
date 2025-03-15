@@ -1,118 +1,107 @@
-# Poetry Network
+# The Poetry Network (Work in Progress 🚧)
 
-A modern web application for poets and writers to create, share, and collaborate on poetry.
+A modern platform for poetry and short story workshops, built with Next.js, TypeScript, and Prisma. **Currently under active development and seeking contributors!**
 
-## Database Setup
+## 🌟 Current Status
+
+This project is actively being developed and **needs help from contributors**. While the basic infrastructure is in place, there are many features that need implementation and improvements to be made.
+
+### What's Working
+- Basic authentication system
+- Core poetry creation and editing
+- Initial workshop system setup
+- Basic user profiles
+- API foundation
+
+### What Needs Help
+- Email verification system
+- Password reset functionality
+- Workshop real-time collaboration
+- Advanced search features
+- Analytics dashboard
+- Testing coverage
+- Documentation improvements
+- Security enhancements
+
+## 🚀 Tech Stack
+
+- **Frontend**: Next.js 14, React, TypeScript, TailwindCSS
+- **Backend**: Next.js API Routes
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **Real-time**: Pusher
+- **Email**: Resend
+- **Styling**: Tailwind CSS + shadcn/ui
+
+## 🤝 Want to Help?
+
+We're looking for contributors! If you're interested in helping, you can:
+
+1. Check our [TODO.md](TODO.md) for specific tasks
+2. Look at our [Project Board](https://github.com/your-username/poetry-network/projects) for current priorities
+3. Review our [Contributing Guide](CONTRIBUTING.md)
+4. Join our development discussions
+
+## 🛠️ Getting Started
 
 ### Prerequisites
-- MySQL Server installed and running
-- Node.js and npm installed
-- Git installed
 
-### Configuration
-1. Create a MySQL user and set up credentials:
-   ```sql
-   CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
-   GRANT ALL PRIVILEGES ON poetry_network.* TO 'user'@'localhost';
-   FLUSH PRIVILEGES;
-   ```
+- Node.js 18+ 
+- npm or yarn
+- PostgreSQL database
 
-2. Update the `.env.local` file with your MySQL credentials:
-   ```
-   DATABASE_URL="mysql://user:password@localhost:3306/poetry_network"
-   ```
+### Installation
 
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
+1. Clone the repository:
+```bash
+git clone https://github.com/mooncakeSG/The-Poetry-Network.git
+cd poetry-network
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+Fill in your `.env` file with:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/poetry_network"
+NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_URL="http://localhost:3000"
+PUSHER_APP_ID="your-pusher-app-id"
+PUSHER_KEY="your-pusher-key"
+PUSHER_SECRET="your-pusher-secret"
+RESEND_API_KEY="your-resend-api-key"
+```
 
 4. Set up the database:
-   ```bash
-   npm run db:setup
-   ```
+```bash
+npx prisma migrate dev
+```
 
-5. Run database migrations:
-   ```bash
-   npm run db:migrate
-   ```
-
-### Database Structure
-The application uses Prisma ORM with the following main models:
-- Users
-- Poems
-- Workshops
-- Comments
-- Privacy Settings
-
-For detailed schema information, see `prisma/schema.prisma`.
-
-## Features
-
-### AI-Powered Writing Tools
-
-The application includes a suite of AI-powered tools to enhance the writing experience:
-
-1. **Writing Assistant**
-   - Get instant feedback on your writing
-   - Receive suggestions for improvements
-   - Check grammar and style issues
-   - Enhance your writing quality
-
-2. **Content Generator**
-   - Generate poems and short stories from prompts
-   - Get AI-generated content with metadata
-   - Analyze generated content for themes and emotions
-   - Customize content type and style
-
-3. **Sentiment Analysis**
-   - Analyze the emotional tone of your writing
-   - Detect underlying themes and topics
-   - Get detailed emotion breakdowns
-   - Understand how your writing might be perceived
-
-### Privacy Features
-
-- Granular privacy controls for profiles and content
-- Customizable visibility settings
-- Interaction permissions management
-- Private information filtering
-
-## Getting Started
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env.local
-   ```
-4. Add your OpenAI API key to `.env.local`:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
 5. Run the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
-## Environment Variables
+Visit `http://localhost:3000` to see the application.
 
-- `OPENAI_API_KEY`: Your OpenAI API key for AI features
-- `DATABASE_URL`: Your database connection string
-- `NEXTAUTH_SECRET`: Secret for NextAuth.js
-- `NEXTAUTH_URL`: Your application URL
+## 📝 Contributing
 
-## Contributing
+Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+## 🆘 Need Help?
 
-## License
+If you're interested in contributing but need guidance:
+1. Open an issue with questions
+2. Check our [Wiki](https://github.com/your-username/poetry-network/wiki)
+3. Contact the maintainers
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
