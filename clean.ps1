@@ -3,10 +3,36 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
-# Clean up node_modules and package-lock.json
-Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
-Remove-Item package-lock.json -ErrorAction SilentlyContinue
+# Clean Next.js build files
+Write-Host "Cleaning Next.js build files..." -ForegroundColor Yellow
+if (Test-Path .next) {
+    Remove-Item -Recurse -Force .next
+}
 
-# Clean npm cache and reinstall dependencies
+# Clean node_modules
+Write-Host "Cleaning node_modules..." -ForegroundColor Yellow
+if (Test-Path node_modules) {
+    Remove-Item -Recurse -Force node_modules
+}
+
+# Clean TypeScript cache
+Write-Host "Cleaning TypeScript cache..." -ForegroundColor Yellow
+if (Test-Path *.tsbuildinfo) {
+    Remove-Item *.tsbuildinfo
+}
+
+# Clean test coverage
+Write-Host "Cleaning test coverage..." -ForegroundColor Yellow
+if (Test-Path coverage) {
+    Remove-Item -Recurse -Force coverage
+}
+
+# Clean npm cache
+Write-Host "Cleaning npm cache..." -ForegroundColor Yellow
 npm cache clean --force
-npm install --legacy-peer-deps 
+
+# Reinstall dependencies
+Write-Host "Reinstalling dependencies..." -ForegroundColor Green
+npm install
+
+Write-Host "Clean complete! 🧹" -ForegroundColor Green 

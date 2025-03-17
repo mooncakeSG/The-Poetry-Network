@@ -2,7 +2,9 @@
 if (Test-Path .env) {
     Get-Content .env | ForEach-Object {
         if ($_ -match '^([^=]+)=(.*)$') {
-            $env:$($Matches[1]) = $Matches[2]
+            $key = $Matches[1]
+            $value = $Matches[2]
+            Set-Item -Path "env:$key" -Value $value
         }
     }
 }
