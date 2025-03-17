@@ -1,13 +1,11 @@
 "use client"
 
-import { Component, ErrorInfo, ReactNode } from "react"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
+import { Component, ReactNode } from "react"
 
 interface Props {
   children: ReactNode
   fallback?: ReactNode
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
 }
 
 interface State {
@@ -16,43 +14,44 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
+  constructor(props: Props) {
+    super(props)
+    this.state = { hasError: false, error: null }
   }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error }
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo)
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Error caught by boundary:", error, errorInfo)
+    this.props.onError?.(error, errorInfo)
   }
 
-  private handleRetry = () => {
-    this.setState({ hasError: false, error: null })
-  }
-
-  public render() {
+  render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback
       }
 
       return (
-        <div className="flex min-h-[400px] w-full items-center justify-center p-8">
-          <Alert variant="destructive" className="max-w-2xl">
-            <ExclamationTriangleIcon className="h-4 w-4" />
-            <AlertTitle>Something went wrong</AlertTitle>
-            <AlertDescription className="mt-4">
-              <p className="mb-4">
-                {this.state.error?.message || "An unexpected error occurred."}
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Something went wrong
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {this.state.error?.message || "An unexpected error occurred"}
               </p>
-              <Button onClick={this.handleRetry} variant="outline">
-                Try again
-              </Button>
-            </AlertDescription>
-          </Alert>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Reload Page
+              </button>
+            </div>
+          </div>
         </div>
       )
     }
