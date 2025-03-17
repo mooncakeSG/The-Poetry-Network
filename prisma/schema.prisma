@@ -24,12 +24,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -46,14 +46,28 @@ model Session {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String?  @unique
-  image     String?
-  poems     Poem[]
-  moods     Mood[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  moods         Mood[]
+  poems         Poem[]
+  accounts      Account[]
+  sessions      Session[]
+  comments      Comment[]
+  likes         Like[]
+  following     Follow[]  @relation("Following")
+  followers     Follow[]  @relation("Followers")
+  hostedWorkshops Workshop[] @relation("WorkshopHost")
+  createdWorkshops Workshop[] @relation("CreatedWorkshops")
+  participatedWorkshops Workshop[] @relation("WorkshopParticipants")
+  workshopMemberships WorkshopMember[]
+  feedback      Feedback[]
+  drafts        Draft[]
+  notifications Notification[] @relation("NotificationTo")
+  notificationsFrom Notification[] @relation("NotificationFrom")
 }
 
 model VerificationToken {
@@ -65,14 +79,20 @@ model VerificationToken {
 }
 
 model Poem {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  mood      String?
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String     @id @default(cuid())
+  title       String
+  content     String     @db.Text
+  published   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id])
+  comments    Comment[]
+  likes       Like[]
+  tags        Tag[]
+  workshopId  String?
+  workshop    Workshop?  @relation(fields: [workshopId], references: [id])
+  feedback    Feedback[]
 }
 
 model Mood {
@@ -80,26 +100,23 @@ model Mood {
   mood      String
   notes     String?
   intensity String
-  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([date])
 }
 
 model Comment {
   id        String   @id @default(cuid())
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
   poemId    String
   poem      Poem     @relation(fields: [poemId], references: [id], onDelete: Cascade)
-
-  @@index([authorId])
-  @@index([poemId])
 }
 
 model Like {
@@ -109,10 +126,6 @@ model Like {
   user      User     @relation(fields: [userId], references: [id])
   poemId    String
   poem      Poem     @relation(fields: [poemId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, poemId])
-  @@index([userId])
-  @@index([poemId])
 }
 
 model Tag {
@@ -124,102 +137,75 @@ model Tag {
 }
 
 model Follow {
+  id            String   @id @default(cuid())
   followerId    String
   followingId   String
   follower      User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
   following     User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
 
-  @@id([followerId, followingId])
-  @@index([followerId])
-  @@index([followingId])
+  @@unique([followerId, followingId])
 }
 
 model Workshop {
-  id              String    @id @default(cuid())
-  title           String
-  description     String
-  date           DateTime
-  startTime      String
-  endTime        String
-  maxParticipants Int      @default(20)
-  type           String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  host           User      @relation("WorkshopHost", fields: [hostId], references: [id], map: "Workshop_hostId_host_fkey")
-  hostId         String
-  participants   User[]    @relation("WorkshopParticipants")
-  creator        User      @relation("CreatedWorkshops", fields: [hostId], references: [id], map: "Workshop_hostId_creator_fkey")
-  members        WorkshopMember[]
-  poems          Poem[]
-  drafts         Draft[]
-  notifications  Notification[]
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @db.Text
+  startDate     DateTime
+  endDate       DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  host          User     @relation("WorkshopHost", fields: [hostId], references: [id], map: "Workshop_host_fkey")
+  hostId        String
+  participants  User[]   @relation("WorkshopParticipants")
+  creator       User     @relation("CreatedWorkshops", fields: [hostId], references: [id], map: "Workshop_creator_fkey")
+  members       WorkshopMember[]
+  poems         Poem[]
+  drafts        Draft[]
 }
 
 model WorkshopMember {
   id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
+  role        String   @default("participant")
+  joinedAt    DateTime @default(now())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   workshopId  String
   workshop    Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
-  role        String   @default("member")
-
-  @@unique([userId, workshopId])
-  @@index([userId])
-  @@index([workshopId])
 }
 
 model Feedback {
   id        String   @id @default(cuid())
-  content   String
-  rating    Int?
+  content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   authorId  String
-  poemId    String
   author    User     @relation(fields: [authorId], references: [id])
+  poemId    String
   poem      Poem     @relation(fields: [poemId], references: [id], onDelete: Cascade)
-
-  @@index([authorId])
-  @@index([poemId])
 }
 
 model Draft {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
-  content     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
+  author      User     @relation(fields: [authorId], references: [id])
   workshopId  String?
   workshop    Workshop? @relation(fields: [workshopId], references: [id])
   tags        Tag[]
-  published   Boolean   @default(false)
-  publishedAt DateTime?
-
-  @@index([authorId])
-  @@index([workshopId])
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  type      String   // 'follow', 'like', 'comment', 'workshop_invite', etc.
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userFrom  User?    @relation("NotificationFrom", fields: [userFromId], references: [id])
-  userFromId String?
-  poemId    String?
-  poem      Poem?    @relation(fields: [poemId], references: [id], onDelete: Cascade)
-  workshopId String?
-  workshop  Workshop? @relation(fields: [workshopId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userFromId])
-  @@index([poemId])
-  @@index([workshopId])
+  id          String   @id @default(cuid())
+  type        String
+  content     String   @db.Text
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation("NotificationTo", fields: [userId], references: [id], onDelete: Cascade)
+  userFromId  String?
+  userFrom    User?    @relation("NotificationFrom", fields: [userFromId], references: [id])
 }

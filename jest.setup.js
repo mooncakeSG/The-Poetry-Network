@@ -19,6 +19,15 @@ jest.mock('next/navigation', () => ({
   },
 }));
 
+// Mock next/image
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: (props) => {
+    // eslint-disable-next-line jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}));
+
 // Mock next-auth
 jest.mock('next-auth', () => ({
   getServerSession: jest.fn(),
@@ -28,25 +37,24 @@ jest.mock('next-auth', () => ({
 
 // Mock prisma
 jest.mock('@/lib/prisma', () => ({
-  __esModule: true,
-  default: {
-    user: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
+  prisma: {
     poem: {
-      findUnique: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
     mood: {
-      findUnique: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    user: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -145,4 +153,22 @@ global.fetch = jest.fn().mockImplementation((url, options) => {
     status: 404,
     json: () => Promise.resolve({ error: 'Not found' }),
   })
-}) 
+})
+
+// Suppress console.error in tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Warning: ReactDOM.render is no longer supported')
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+}); 

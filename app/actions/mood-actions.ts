@@ -5,8 +5,17 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { moodSchema, type MoodInput } from "@/lib/validations/mood";
 import { ZodError } from "zod";
+import { z } from 'zod';
 
-export async function createMoodEntry(data: MoodInput) {
+const MoodEntrySchema = z.object({
+  mood: z.string(),
+  notes: z.string().optional(),
+  intensity: z.enum(['Positive', 'Neutral', 'Struggling']),
+});
+
+export type MoodEntry = z.infer<typeof MoodEntrySchema>;
+
+export async function createMoodEntry(data: MoodEntry) {
   const session = await getServerSession(authOptions);
   
   if (!session?.user?.id) {
@@ -14,8 +23,7 @@ export async function createMoodEntry(data: MoodInput) {
   }
 
   try {
-    // Validate input data
-    const validatedData = moodSchema.parse(data);
+    const validatedData = MoodEntrySchema.parse(data);
 
     const moodEntry = await prisma.mood.create({
       data: {
@@ -33,13 +41,10 @@ export async function createMoodEntry(data: MoodInput) {
       }
     }
 
-    return moodEntry;
+    return { success: true, data: moodEntry };
   } catch (error) {
-    if (error instanceof ZodError) {
-      throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
-    }
-    console.error("Error creating mood entry:", error);
-    throw new Error("Failed to create mood entry");
+    console.error('Failed to create mood entry:', error);
+    return { success: false, error: 'Failed to save mood entry' };
   }
 }
 
