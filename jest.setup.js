@@ -1,29 +1,57 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
-// Mock Prisma
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      create: jest.fn().mockResolvedValue({
-        id: 'test-user-id',
-        name: 'Test User',
-        email: 'test@example.com',
-      }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
-    },
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      push: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn(),
+      back: jest.fn(),
+    };
   },
-}))
+  usePathname() {
+    return '';
+  },
+  useSearchParams() {
+    return new URLSearchParams();
+  },
+}));
 
 // Mock next-auth
 jest.mock('next-auth', () => ({
-  getServerSession: jest.fn().mockResolvedValue({
+  getServerSession: jest.fn(),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+}))
+
+// Mock prisma
+jest.mock('@/lib/prisma', () => ({
+  __esModule: true,
+  default: {
     user: {
-      id: 'test-user-id',
-      name: 'Test User',
-      email: 'test@example.com',
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
     },
-  }),
+    poem: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    mood: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  },
 }))
 
 // Mock fetch
