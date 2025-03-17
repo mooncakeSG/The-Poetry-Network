@@ -29,140 +29,48 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { title, content, tags, workshopId } = body
-
-    if (!title || !content) {
-      return NextResponse.json(
-        { error: "Title and content are required" },
-        { status: 400 }
-      )
-    }
+    const { title, content, mood } = body
 
     const poem = await prisma.poem.create({
       data: {
         title,
         content,
+        mood,
         authorId: session.user.id,
-        workshopId,
-        tags: {
-          connectOrCreate: tags?.map((tag: string) => ({
-            where: { name: tag },
-            create: { name: tag },
-          })) || [],
-        },
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        tags: true,
       },
     })
 
     return NextResponse.json(poem)
   } catch (error) {
-    console.error("Create Poem API Error:", error)
+    console.error("Error creating poem:", error)
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to create poem" },
       { status: 500 }
     )
   }
 }
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get("page") || "1")
-  const limit = parseInt(searchParams.get("limit") || "10")
-  const sort = searchParams.get("sort") || "latest"
-  const filter = searchParams.get("filter") || "all"
-  const tag = searchParams.get("tag")
-  const query = searchParams.get("q")
-
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    const skip = (page - 1) * limit
-
-    let where = {
-      published: true,
-      ...(query && {
-        OR: [
-          { title: { contains: query, mode: "insensitive" } },
-          { content: { contains: query, mode: "insensitive" } },
-        ],
-      }),
-      ...(tag && {
-        tags: {
-          some: {
-            name: tag,
-          },
-        },
-      }),
-      ...(filter === "following" && session?.user && {
+    const poems = await prisma.poem.findMany({
+      include: {
         author: {
-          followers: {
-            some: {
-              followerId: session.user.id,
-            },
+          select: {
+            name: true,
+            image: true,
           },
         },
-      }),
-    }
-
-    let orderBy = {}
-    switch (sort) {
-      case "trending":
-        orderBy = { likes: { _count: "desc" } }
-        break
-      case "most_liked":
-        orderBy = { likes: { _count: "desc" } }
-        break
-      case "most_commented":
-        orderBy = { comments: { _count: "desc" } }
-        break
-      default:
-        orderBy = { createdAt: "desc" }
-    }
-
-    const [poems, total] = await Promise.all([
-      prisma.poem.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-          tags: true,
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-            },
-          },
-        },
-      }),
-      prisma.poem.count({ where }),
-    ])
-
-    return NextResponse.json({
-      poems,
-      total,
-      pages: Math.ceil(total / limit),
-      currentPage: page,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     })
+
+    return NextResponse.json(poems)
   } catch (error) {
-    console.error("Poems API Error:", error)
+    console.error("Error fetching poems:", error)
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to fetch poems" },
       { status: 500 }
     )
   }

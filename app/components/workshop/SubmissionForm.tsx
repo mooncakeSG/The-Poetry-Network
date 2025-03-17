@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,8 +17,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { RichTextEditor } from '@/components/RichTextEditor'
-import { ShortStoryEditor } from '@/components/ShortStoryEditor'
+import { RichTextEditor } from '@/app/components/RichTextEditor'
+import { ShortStoryEditor } from '@/app/components/ShortStoryEditor'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { toast } from 'sonner'
 
