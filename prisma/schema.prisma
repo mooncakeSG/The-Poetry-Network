@@ -46,34 +46,13 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  bio           String?
-  location      String?
-  website       String?
-  socialLinks   String?   @default("")
-  preferences   String?   @default("")
-  privacy       String?   @default("")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  poems         Poem[]
-  comments      Comment[]
-  likes         Like[]
-  following     Follow[]  @relation("Following")
-  followers     Follow[]  @relation("Followers")
-  workshops     WorkshopMember[]
-  drafts        Draft[]
-  createdWorkshops Workshop[] @relation("CreatedWorkshops")
-  feedback      Feedback[]
-  notifications Notification[]
-  notificationsFrom Notification[] @relation("NotificationFrom")
-  hostedWorkshops    Workshop[] @relation("WorkshopHost")
-  joinedWorkshops    Workshop[] @relation("WorkshopParticipants")
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  image     String?
+  poems     Poem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
@@ -85,25 +64,22 @@ model VerificationToken {
 }
 
 model Poem {
-  id          String    @id @default(cuid())
-  title       String
-  content     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  published   Boolean   @default(false)
-  publishedAt DateTime?
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
-  workshopId  String?
-  workshop    Workshop? @relation(fields: [workshopId], references: [id])
-  tags        Tag[]
-  likes       Like[]
-  comments    Comment[]
-  feedback    Feedback[]
-  notifications Notification[]
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  mood      String?
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-  @@index([authorId])
-  @@index([workshopId])
+model Mood {
+  id        String   @id @default(cuid())
+  mood      String
+  date      DateTime @default(now())
+  userId    String
+  createdAt DateTime @default(now())
 }
 
 model Comment {

@@ -1,60 +1,28 @@
-# The Poetry Network (Work in Progress 🚧)
+# Poetry Network
 
-A modern platform for poetry and short story workshops, built with Next.js, TypeScript, and Prisma. **Currently under active development and seeking contributors!**
+A simple web application for sharing and creating poetry with AI assistance.
 
-## 🌟 Current Status
+## Features
 
-This project is actively being developed and **needs help from contributors**. While the basic infrastructure is in place, there are many features that need implementation and improvements to be made.
+- 📝 Create and share poems
+- 😊 Track your mood
+- 🤖 AI-powered poem generation
+- 👥 User authentication
+- 📱 Responsive design
 
-### What's Working
-- Basic authentication system
-- Core poetry creation and editing
-- Initial workshop system setup
-- Basic user profiles
-- API foundation
+## Tech Stack
 
-### What Needs Help
-- Email verification system
-- Password reset functionality
-- Workshop real-time collaboration
-- Advanced search features
-- Analytics dashboard
-- Testing coverage
-- Documentation improvements
-- Security enhancements
+- Next.js 14
+- PostgreSQL with Prisma
+- NextAuth.js for authentication
+- OpenAI API for AI features
+- TailwindCSS for styling
 
-## 🚀 Tech Stack
-
-- **Frontend**: Next.js 14, React, TypeScript, TailwindCSS
-- **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js
-- **Real-time**: Pusher
-- **Email**: Resend
-- **Styling**: Tailwind CSS + shadcn/ui
-
-## 🤝 Want to Help?
-
-We're looking for contributors! If you're interested in helping, you can:
-
-1. Check our [TODO.md](TODO.md) for specific tasks
-2. Look at our [Project Board](https://github.com/your-username/poetry-network/projects) for current priorities
-3. Review our [Contributing Guide](CONTRIBUTING.md)
-4. Join our development discussions
-
-## 🛠️ Getting Started
-
-### Prerequisites
-
-- Node.js 18+ 
-- npm or yarn
-- PostgreSQL database
-
-### Installation
+## Getting Started
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/mooncakeSG/The-Poetry-Network.git
+git clone https://github.com/yourusername/poetry-network.git
 cd poetry-network
 ```
 
@@ -63,25 +31,16 @@ cd poetry-network
 npm install
 ```
 
-3. Set up environment variables:
+3. Set up your environment variables:
 ```bash
 cp .env.example .env
 ```
-
-Fill in your `.env` file with:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/poetry_network"
-NEXTAUTH_SECRET="your-secret-here"
-NEXTAUTH_URL="http://localhost:3000"
-PUSHER_APP_ID="your-pusher-app-id"
-PUSHER_KEY="your-pusher-key"
-PUSHER_SECRET="your-pusher-secret"
-RESEND_API_KEY="your-resend-api-key"
-```
+Edit `.env` with your credentials.
 
 4. Set up the database:
 ```bash
-npx prisma migrate dev
+npm run db:generate
+npm run db:push
 ```
 
 5. Run the development server:
@@ -89,19 +48,29 @@ npx prisma migrate dev
 npm run dev
 ```
 
-Visit `http://localhost:3000` to see the application.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📝 Contributing
+## Project Structure
 
-Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
+```
+poetry-network/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── components/        # React components
+│   └── page.tsx          # Home page
+├── prisma/               # Database schema and migrations
+├── public/              # Static assets
+└── styles/             # Global styles
+```
 
-## 🆘 Need Help?
+## Contributing
 
-If you're interested in contributing but need guidance:
-1. Open an issue with questions
-2. Check our [Wiki](https://github.com/your-username/poetry-network/wiki)
-3. Contact the maintainers
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
