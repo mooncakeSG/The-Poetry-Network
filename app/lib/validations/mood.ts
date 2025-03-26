@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const moodSchema = z.object({
-  mood: z.enum(["😊", "😐", "😢"]),
+  mood: z.string(),
   notes: z.string().optional(),
   intensity: z.enum(["Positive", "Neutral", "Struggling"]),
 });
